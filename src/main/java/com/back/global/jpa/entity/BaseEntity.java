@@ -25,12 +25,6 @@ public abstract class BaseEntity {
     @Setter(AccessLevel.PROTECTED)
     private int id;
 
-    @CreatedDate
-    private LocalDateTime createDate;
-
-    @LastModifiedDate
-    private LocalDateTime modifyDate;
-
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
