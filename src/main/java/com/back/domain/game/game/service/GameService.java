@@ -1,5 +1,6 @@
 package com.back.domain.game.game.service;
 
+import com.back.domain.game.game.dto.GameSearchRes;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbGameDto;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +14,13 @@ public class GameService {
 
     private final IgdbClient igdbClient;
 
-    public IgdbGameDto getGame(long igdbId) {
-        return igdbClient.getGame(igdbId);
+    public List<GameSearchRes> search(String q) {
+        return igdbClient.searchGames(q, 10).stream()
+                .map(GameSearchRes::from).toList();
     }
 
-    public List<IgdbGameDto> search(String q) {
-        return igdbClient.searchGames(q, 10);
+    public IgdbGameDto getGame(long igdbId) {
+        return igdbClient.getGame(igdbId);
     }
 
     /*private LocalDate toLocalDate(Long epochSeconds) {

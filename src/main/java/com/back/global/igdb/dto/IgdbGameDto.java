@@ -9,5 +9,4 @@ public record IgdbGameDto(
         @JsonProperty("first_release_date")
         Long firstReleaseDate
         // genres/platforms/keywords는 필요해지면 추가
-) {
-}
+) {}
