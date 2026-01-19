@@ -22,6 +22,9 @@ public class Member extends BaseEntity {
     @Column(unique = true)
     private String apiKey;
 
+    @Column(unique = true, length = 30, nullable = false)
+    private String nickname;
+
     @CreatedDate
     private LocalDateTime createDate;
 
