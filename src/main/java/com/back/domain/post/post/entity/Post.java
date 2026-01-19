@@ -1,6 +1,7 @@
 package com.back.domain.post.post.entity;
 
 import com.back.domain.member.member.entity.Member;
+import com.back.domain.post.postComment.entity.PostComment;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -30,7 +31,7 @@ public class Post extends BaseEntity {
     private Member author;
 
     @OneToMany(mappedBy = "post", cascade = {PERSIST, REMOVE}, orphanRemoval = true)
-    private List<Post> comments = new ArrayList<>();
+    private List<PostComment> comments = new ArrayList<>();
 
     //테스트입니다.
 
