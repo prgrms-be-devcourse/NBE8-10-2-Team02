@@ -87,5 +87,18 @@ public class PostController {
                 .toList();
     }
 
+    @PostMapping("/{id}/tags/{tagId}")
+    public RsData<Void> addTag(
+            @PathVariable int id,
+            @PathVariable int tagId
+    ){
+        postService.addTag(id, tagId);
+
+        return new RsData<>(
+                "200-1",
+                "%d번 게시글에 %d번 태그가 추가되었습니다.".formatted(id, tagId)
+        );
+    }
+
 
 }

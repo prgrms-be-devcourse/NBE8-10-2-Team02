@@ -5,6 +5,8 @@ import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.postComment.entity.PostComment;
+import com.back.domain.tag.tag.entity.Tag;
+import com.back.domain.tag.tag.service.TagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.util.Optional;
 @Transactional
 public class PostService {
     private final PostRepository postRepository;
+    private  final TagService tagService;
 
 
     public List<Post> findAll() {
@@ -25,6 +28,7 @@ public class PostService {
 
     public Post write(String title, String content) {
         Post post = new Post(title, content);
+
         return postRepository.save(post);
 
     }
@@ -60,5 +64,12 @@ public class PostService {
 
     public void flush() {
         postRepository.flush();
+    }
+
+    public void addTag(int id, int tagId) {
+        Post post = findById(id).orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
+        Tag tag = tagService.findById(tagId).orElseThrow(() -> new IllegalArgumentException("해당 태그가 없습니다."));
+
+        post.addTag(tag);
     }
 }
