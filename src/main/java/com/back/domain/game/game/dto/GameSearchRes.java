@@ -12,12 +12,12 @@ public record GameSearchRes(
         String summary,
         LocalDate firstReleaseDate
 ) {
-    public static GameSearchRes from(IgdbGameDto d) {
+    public static GameSearchRes fromDto(IgdbGameDto d) {
         return new GameSearchRes(
                 d.id(),
                 d.name(),
                 d.summary(),
-                TimeUt.epoch.toLocalDate(d.firstReleaseDate())
+                TimeUt.epoch.toLocalDate(d.firstReleaseDateEpochSeconds())
         );
     }
 }

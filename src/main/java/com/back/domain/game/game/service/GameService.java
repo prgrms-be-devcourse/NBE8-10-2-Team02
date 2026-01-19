@@ -16,7 +16,7 @@ public class GameService {
 
     public List<GameSearchRes> search(String q) {
         return igdbClient.searchGames(q, 10).stream()
-                .map(GameSearchRes::from).toList();
+                .map(GameSearchRes::fromDto).toList();
     }
 
     public IgdbGameDto getGame(long igdbId) {

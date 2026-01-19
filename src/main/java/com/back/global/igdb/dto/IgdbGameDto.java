@@ -7,6 +7,6 @@ public record IgdbGameDto(
         String name,
         String summary,
         @JsonProperty("first_release_date")
-        Long firstReleaseDate
+        Long firstReleaseDateEpochSeconds
         // genres/platforms/keywords는 필요해지면 추가
 ) {}
