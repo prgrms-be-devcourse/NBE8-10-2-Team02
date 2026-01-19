@@ -32,6 +32,8 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post", cascade = {PERSIST, REMOVE}, orphanRemoval = true)
     private List<Post> comments = new ArrayList<>();
 
+    //테스트입니다.
+
 
 
 }
