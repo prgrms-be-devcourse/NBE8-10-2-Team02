@@ -18,7 +18,7 @@ import static jakarta.persistence.FetchType.*;
 @Getter
 @NoArgsConstructor
 public class PostComment extends BaseEntity {
-
+    // 테스트테스테스테스트
     private String content;
     @CreatedDate
     private LocalDateTime createDate;
