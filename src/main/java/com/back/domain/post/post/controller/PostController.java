@@ -6,6 +6,7 @@ import com.back.domain.post.dto.PostDto;
 import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.service.PostService;
+import com.back.domain.tag.tag.entity.Tag;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -78,10 +79,20 @@ public class PostController {
     }
 
     @GetMapping("/search")
-    public List<PostDto> search(
+    public List<PostDto> searchByTitle(
             @RequestParam String keyword
     ){
         return postService.searchByTitle(keyword)
+                .stream()
+                .map(PostDto::new)
+                .toList();
+    }
+
+    @GetMapping("/tag")
+    public List<PostDto> searchByTag(
+            @RequestParam String tagName
+    ){
+        return postService.searchByTagName(tagName)
                 .stream()
                 .map(PostDto::new)
                 .toList();
