@@ -5,6 +5,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record PostDto (
 
@@ -13,7 +14,8 @@ public record PostDto (
     String content,
     @CreatedDate
     LocalDateTime createDate,
-    LocalDateTime modifyDate
+    LocalDateTime modifyDate,
+    List<String > tags
 ) {
     public PostDto(Post post) {
         this(
@@ -21,7 +23,10 @@ public record PostDto (
         post.getTitle(),
         post.getContent(),
         post.getCreateDate(),
-        post.getModifyDate()
+        post.getModifyDate(),
+                post.getPostTags().stream()
+                        .map(pt->pt.getTag().getContent())
+                        .toList()
         );
     }
 }
