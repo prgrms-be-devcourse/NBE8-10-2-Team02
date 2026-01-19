@@ -6,6 +6,7 @@ import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.postComment.entity.PostComment;
 import com.back.domain.tag.tag.entity.Tag;
+import com.back.domain.tag.tag.repository.TagRepository;
 import com.back.domain.tag.tag.service.TagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,10 @@ public class PostService {
 
     public List<Post> searchByTitle(String keyword){
         return postRepository.findByTitleContainingIgnoreCase(keyword);
+    }
+
+    public List<Post> searchByTagName(String tagName){
+        return postRepository.findByPostTags_Tag_Content(tagName);
     }
 
     public PostComment writeComment(Post post, String content) {

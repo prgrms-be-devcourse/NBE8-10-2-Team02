@@ -12,7 +12,6 @@ public record PostDto (
     int id,
     String title,
     String content,
-    @CreatedDate
     LocalDateTime createDate,
     LocalDateTime modifyDate,
     List<String > tags

@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 public record TagDto (
         int id,
     String content,
-    @CreatedDate
     LocalDateTime createDate,
     LocalDateTime modifyDate
 ) {

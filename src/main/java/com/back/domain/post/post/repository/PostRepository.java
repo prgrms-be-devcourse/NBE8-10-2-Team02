@@ -10,4 +10,5 @@ import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Integer> {
     List<Post> findByTitleContainingIgnoreCase(String keyword);
+    List<Post> findByPostTags_Tag_Content(String content);
 }
