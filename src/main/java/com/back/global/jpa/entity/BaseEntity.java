@@ -25,6 +25,7 @@ public abstract class BaseEntity {
     @Setter(AccessLevel.PROTECTED)
     private int id;
 
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
