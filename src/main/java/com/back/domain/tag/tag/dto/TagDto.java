@@ -10,17 +10,13 @@ import java.time.LocalDateTime;
 
 public record TagDto (
         int id,
-    String content,
-    LocalDateTime createDate,
-    LocalDateTime modifyDate
+    String content
 ) {
 
     public TagDto(Tag tag) {
         this(
                 tag.getId(),
-                tag.getContent(),
-                tag.getCreateDate(),
-                tag.getModifyDate()
+                tag.getContent()
         );
     }
 }

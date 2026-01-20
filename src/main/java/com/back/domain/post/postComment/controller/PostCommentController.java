@@ -8,6 +8,7 @@ import com.back.domain.post.postComment.dto.PostCommentCreateRequest;
 import com.back.domain.post.postComment.dto.PostCommentDto;
 import com.back.domain.post.postComment.dto.PostCommentModifyRequest;
 import com.back.domain.post.postComment.entity.PostComment;
+import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -31,7 +32,8 @@ public class PostCommentController {
     public List<PostCommentDto> getItems(
             @PathVariable int postId
     ) {
-        Post post = postService.findById(postId).get();
+        Post post = postService.findById(postId)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
         return post
                 .getComments()
@@ -47,9 +49,11 @@ public class PostCommentController {
             @PathVariable int postId,
             @PathVariable int id
     ) {
-        Post post = postService.findById(postId).get();
+        Post post = postService.findById(postId)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
-        PostComment postComment = post.findCommentById(id).get();
+        PostComment postComment = post.findCommentById(id)
+                .orElseThrow(()-> new ServiceException("404-2", "해당 댓글을 찾을 수 없습니다."));
 
         return new PostCommentDto(postComment);
     }
@@ -62,9 +66,11 @@ public class PostCommentController {
             @PathVariable int id
     ) {
 
-        Post post = postService.findById(postId).get();
+        Post post = postService.findById(postId)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
-        PostComment postComment = post.findCommentById(id).get();
+        PostComment postComment = post.findCommentById(id)
+                .orElseThrow(()-> new ServiceException("404-2", "해당 댓글을 찾을 수 없습니다."));
 
         postService.deleteComment(post, postComment);
 
@@ -85,9 +91,11 @@ public class PostCommentController {
             @Valid @RequestBody PostCommentModifyRequest reqBody
     ) {
 
-        Post post = postService.findById(postId).get();
+        Post post = postService.findById(postId)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
-        PostComment postComment = post.findCommentById(id).get();
+        PostComment postComment = post.findCommentById(id)
+                .orElseThrow(()-> new ServiceException("404-2", "해당 댓글을 찾을 수 없습니다."));
 
         postService.modifyComment(postComment, reqBody.content());
 
@@ -104,7 +112,8 @@ public class PostCommentController {
             @PathVariable int postId,
             @Valid @RequestBody PostCommentCreateRequest reqBody
     ) {
-        Post post = postService.findById(postId).get();
+        Post post = postService.findById(postId)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
         PostComment postComment =
                 postService.writeComment(post, reqBody.content());

@@ -79,8 +79,10 @@ public class Post extends BaseEntity {
         postTags.add(new PostTag(this, tag));
     }
 
-    public void clearTags(){
-        postTags.clear();
+    public boolean deleteTag(Tag tag){
+        return postTags.removeIf(
+                postTag ->postTag.getTag().equals(tag)
+        );
     }
 
 }
