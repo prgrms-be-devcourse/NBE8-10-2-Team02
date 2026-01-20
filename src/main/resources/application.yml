@@ -39,6 +39,6 @@ custom:
     expirationSeconds: "#{60*5}"
 igdb:
   base-url: "https://api.igdb.com/v4"
-  client-id: "ycstm891r1nxcy7711rs2znskmqwjt"
-  client-secret: "vkslbfo3qw9iwxg6lowjoe1vgzvjxd"
+  client-id: "${IGDB_CLIENT_ID}"
+  client-secret: "${IGDB_CLIENT_SECRET}"
   token-url: "https://id.twitch.tv/oauth2/token"
