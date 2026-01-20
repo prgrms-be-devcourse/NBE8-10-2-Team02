@@ -1,8 +1,10 @@
 package com.back.domain.member.member.service;
 
+import com.back.domain.member.auth.service.AuthTokenService;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
 import com.back.global.exception.ServiceException;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,8 +13,11 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MemberService {
+
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+
+    private final AuthTokenService authTokenService;
 
     public Optional<Member> findByEmail(String email) {
         return memberRepository.findByEmail(email);
@@ -40,5 +45,18 @@ public class MemberService {
         }
 
         return member;
+    }
+
+    public Member findByApiKey(String apiKey) {
+        return memberRepository.findByApiKey(apiKey)
+                .orElseThrow(() -> new ServiceException("401-3", "API 키가 유효하지 않습니다."));
+    }
+
+    public String genAccessToken(Member member) {
+        return authTokenService.genAccessToken(member);
+    }
+
+    public Map<String, Object> payload(String accessToken) {
+        return authTokenService.payload(accessToken);
     }
 }

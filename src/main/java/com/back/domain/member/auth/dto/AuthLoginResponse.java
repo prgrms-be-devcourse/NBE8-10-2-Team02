@@ -5,9 +5,11 @@ import com.back.domain.member.member.entity.Member;
 public record AuthLoginResponse(
         int memberId,
         String email,
-        String nickname
+        String nickname,
+        String apiKey,
+        String accessToken
 ) {
-    public AuthLoginResponse(Member member) {
-        this(member.getId(), member.getEmail(), member.getNickname());
+    public AuthLoginResponse(Member member, String apiKey, String accessToken) {
+        this(member.getId(), member.getEmail(), member.getNickname(), apiKey, accessToken);
     }
 }

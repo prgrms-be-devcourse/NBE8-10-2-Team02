@@ -23,7 +23,9 @@ public class ApiV1AuthController {
     @Transactional(readOnly = true)
     public RsData<AuthLoginResponse> login(@Valid @RequestBody AuthLoginRequest req) {
         Member member = memberService.login(req.email(), req.password());
-        return new RsData<>("200-1", "로그인 성공", new AuthLoginResponse(member));
+        String accessToken = memberService.genAccessToken(member);
+        return new RsData<>("200-1", "로그인 성공",
+                new AuthLoginResponse(member, member.getApiKey(), accessToken));
     }
 
     @PostMapping("/signup")
