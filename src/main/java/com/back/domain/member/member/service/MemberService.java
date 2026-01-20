@@ -47,9 +47,8 @@ public class MemberService {
         return member;
     }
 
-    public Member findByApiKey(String apiKey) {
-        return memberRepository.findByApiKey(apiKey)
-                .orElseThrow(() -> new ServiceException("401-3", "API 키가 유효하지 않습니다."));
+    public Optional<Member> findByApiKey(String apiKey) {
+        return memberRepository.findByApiKey(apiKey);
     }
 
     public String genAccessToken(Member member) {
