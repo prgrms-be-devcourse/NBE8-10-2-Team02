@@ -7,13 +7,11 @@ import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.service.PostService;
 import com.back.domain.tag.tag.entity.Tag;
+import com.back.domain.tag.tag.service.TagService;
+import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final TagService tagService;
 
     @GetMapping
     public List<PostDto> getItems(){
@@ -35,7 +34,8 @@ public class PostController {
 
     @GetMapping("/{id}")
     public PostDto getItem(@PathVariable int id) {
-        Post post = postService.findById(id).get();
+        Post post = postService.findById(id)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
         return new PostDto(post);
     }
@@ -57,7 +57,8 @@ public class PostController {
             @PathVariable int id,
             @RequestBody @Valid PostModifyRequest request
     ) {
-        Post post = postService.findById(id).get();
+        Post post = postService.findById(id)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
         postService.modify(post, request);
 
@@ -68,7 +69,8 @@ public class PostController {
     public RsData<Void> delete(
             @PathVariable int id
     ){
-        Post post = postService.findById(id).get();
+        Post post = postService.findById(id)
+                        .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
         postService.delete(post);
 
@@ -108,6 +110,24 @@ public class PostController {
         return new RsData<>(
                 "200-1",
                 "%d번 게시글에 %d번 태그가 추가되었습니다.".formatted(id, tagId)
+        );
+    }
+
+    @DeleteMapping("/{id}/tags/{tagId}")
+    public RsData<Void> deleteTag(
+            @PathVariable int id,
+            @PathVariable int tagId
+    ){
+        Post post = postService.findById(id)
+                .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
+        Tag tag = tagService.findById(tagId)
+                .orElseThrow(()-> new ServiceException("404-2", "해당 태그를 찾을 수 없습니다."));
+
+        postService.deleteTag(post, tag);
+
+        return new RsData<>(
+                "200-1",
+                "태그가 게시글에서 제거되었습니다."
         );
     }
 

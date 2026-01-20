@@ -1,13 +1,12 @@
 package com.back.domain.post.post.service;
 
-import com.back.domain.member.member.entity.Member;
 import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.postComment.entity.PostComment;
 import com.back.domain.tag.tag.entity.Tag;
-import com.back.domain.tag.tag.repository.TagRepository;
 import com.back.domain.tag.tag.service.TagService;
+import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,9 +71,22 @@ public class PostService {
     }
 
     public void addTag(int id, int tagId) {
-        Post post = findById(id).orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
-        Tag tag = tagService.findById(tagId).orElseThrow(() -> new IllegalArgumentException("해당 태그가 없습니다."));
+        Post post = findById(id)
+                .orElseThrow(() -> new ServiceException("404-1", "게시글을 찾을 수 없습니다.")); //
+
+        Tag tag = tagService.findById(tagId)
+                .orElseThrow(() -> new ServiceException("404-2", "태그를 찾을 수 없습니다.")); //
 
         post.addTag(tag);
     }
+
+    public void deleteTag(Post post, Tag tag){
+        boolean removed = post.deleteTag(tag);
+
+        if (!removed) {
+            throw new ServiceException("400-2", "게시글에 존재하지 않는 태그입니다.");
+        }
+    }
+
+
 }
