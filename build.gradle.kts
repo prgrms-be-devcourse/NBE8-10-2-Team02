@@ -2,9 +2,9 @@ plugins {
 	java
 	id("org.springframework.boot") version "4.0.1"
 	id("io.spring.dependency-management") version "1.1.7"
-	kotlin("jvm") version "1.9.0"
-	kotlin("plugin.spring") version "1.9.0"
-	kotlin("plugin.jpa") version "1.9.0"
+	kotlin("jvm") version "2.1.0"
+	kotlin("plugin.spring") version "2.1.0"
+	kotlin("plugin.jpa") version "2.1.0"
 }
 
 group = "com"
@@ -56,9 +56,13 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-restclient")
 
-	// QueryDSL
-	implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
-	annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta")
+	// 1. QueryDSL 라이브러리
+	implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
+
+	// 2. QClass 생성을 위한 핵심 엔진 (이 3개가 세트입니다)
+	annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
+	annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+	annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 
 }
 
