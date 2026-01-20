@@ -1,18 +1,57 @@
 package com.back.domain.game.game.entity;
 
 import com.back.global.jpa.entity.BaseEntity;
-import jakarta.persistence.Entity;
+import com.back.standard.util.TimeUt;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @NoArgsConstructor
+@Table(
+        name = "game",
+        uniqueConstraints = @UniqueConstraint(name = "uk_game_igdb_id", columnNames = "igdb_id"),
+        indexes = @Index(name = "ix_game_name", columnList = "name")
+)
 public class Game extends BaseEntity {
-    private String name;
-    private String summary;
-    private LocalDateTime first_release_date;
+    @Column(name = "igdb_id", nullable = false)
+    private long igdbId;
 
+    @Column(nullable = false, length = 200)
+    private String name;
+
+    @Column(nullable = false, length = 200)
+    private String summary;
+
+    private String coverImageId;
+    private LocalDate firstReleaseDate;
+    private Instant lastFetchedAt;
+
+    public static Game createGame(
+            long igdbId,
+            String name,
+            String summary,
+            String imageId,
+            long firstReleaseDate
+    ) {
+        Game g = new Game();
+        g.igdbId = igdbId;
+        g.name = name;
+        g.summary = summary;
+        g.coverImageId = imageId;
+        g.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDate);
+        g.lastFetchedAt = Instant.now();
+
+        return g;
+    }
+
+    public void update(String name, String summary) {
+        this.name = name;
+        this.summary = summary;
+    }
 }

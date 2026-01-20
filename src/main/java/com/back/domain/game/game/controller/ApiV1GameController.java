@@ -1,8 +1,8 @@
 package com.back.domain.game.game.controller;
 
-import com.back.domain.game.game.dto.GameSearchRes;
+import com.back.domain.game.game.dto.GameDetailResponse;
+import com.back.domain.game.game.dto.GameSearchResponse;
 import com.back.domain.game.game.service.GameService;
-import com.back.global.igdb.dto.IgdbGameDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +15,14 @@ public class ApiV1GameController {
     private final GameService gameService;
 
     @GetMapping
-    public List<GameSearchRes> search(@RequestParam String query) {
-        List<GameSearchRes> searched = gameService.search(query);
+    public List<GameSearchResponse> search(@RequestParam String query) {
+        List<GameSearchResponse> searched = gameService.search(query);
         return searched;
     }
 
     @GetMapping("/{igdbId}")
-    public IgdbGameDto getGame(@PathVariable Long igdbId) {
-        IgdbGameDto game = gameService.getGame(igdbId);
+    public GameDetailResponse getGame(@PathVariable Long igdbId) {
+        GameDetailResponse game = gameService.getGameDetail(igdbId);
 
         return game;
     }
