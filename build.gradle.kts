@@ -56,8 +56,23 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-restclient")
 
+	// QueryDSL
+	implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+	annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta")
+
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+
+sourceSets {
+	main {
+		java {
+			srcDirs("build/generated/sources/annotationProcessor/java/main")
+		}
+	}
+}
+
+
