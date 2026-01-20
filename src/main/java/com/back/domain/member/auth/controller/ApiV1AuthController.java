@@ -2,6 +2,8 @@ package com.back.domain.member.auth.controller;
 
 import com.back.domain.member.auth.dto.AuthLoginRequest;
 import com.back.domain.member.auth.dto.AuthLoginResponse;
+import com.back.domain.member.auth.dto.AuthSignupRequest;
+import com.back.domain.member.auth.dto.AuthSignupResponse;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
 import com.back.global.rsData.RsData;
@@ -22,5 +24,12 @@ public class ApiV1AuthController {
     public RsData<AuthLoginResponse> login(@Valid @RequestBody AuthLoginRequest req) {
         Member member = memberService.login(req.email(), req.password());
         return new RsData<>("200-1", "로그인 성공", new AuthLoginResponse(member));
+    }
+
+    @PostMapping("/signup")
+    @Transactional
+    public RsData<AuthSignupResponse> signup(@Valid @RequestBody AuthSignupRequest req) {
+        Member member = memberService.join(req.email(), req.password(), req.nickname());
+        return new RsData<>("201-1", "회원가입 성공", new AuthSignupResponse(member));
     }
 }

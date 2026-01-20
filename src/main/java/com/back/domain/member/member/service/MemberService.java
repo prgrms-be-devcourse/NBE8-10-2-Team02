@@ -18,6 +18,19 @@ public class MemberService {
         return memberRepository.findByEmail(email);
     }
 
+    public Member join(String email, String password, String nickname) {
+        if (memberRepository.existsByEmail(email)) {
+            throw new ServiceException("409-1", "이미 존재하는 이메일입니다.");
+        }
+        if (memberRepository.existsByNickname(nickname)) {
+            throw new ServiceException("409-2", "이미 존재하는 닉네임입니다.");
+        }
+
+        String encoded = passwordEncoder.encode(password);
+        Member member = new Member(email, encoded, nickname);
+        return memberRepository.save(member);
+    }
+
     public Member login(String email, String password) {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new ServiceException("401-1", "이메일 또는 비밀번호가 올바르지 않습니다."));
