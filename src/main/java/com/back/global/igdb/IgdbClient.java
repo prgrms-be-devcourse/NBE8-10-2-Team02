@@ -1,7 +1,9 @@
 package com.back.global.igdb;
 
-import com.back.global.igdb.dto.IgdbGameDto;
+import com.back.global.igdb.dto.IgdbGameDetailDto;
+import com.back.global.igdb.dto.IgdbGameSummaryDto;
 import com.back.global.igdb.exception.IgdbApiException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -15,20 +17,16 @@ import java.util.List;
  * 응답을 DTO로 역직렬화
  */
 @Component
+@RequiredArgsConstructor
 public class IgdbClient {
 
     private final RestClient igdbRestClient;
     private final IgdbProperties props;
     private final TwitchTokenService tokenService;
 
-    public IgdbClient(RestClient igdbRestClient, IgdbProperties props, TwitchTokenService tokenService) {
-        this.igdbRestClient = igdbRestClient;
-        this.props = props;
-        this.tokenService = tokenService;
-    }
 
     // 예: 게임 검색
-    public List<IgdbGameDto> searchGames(String keyword, int limit) {
+    public List<IgdbGameSummaryDto> searchGames(String keyword, int limit) {
         // IGDB Query Language (APICALYPSE)
         // search "elden ring"; fields id,name,summary,first_release_date,cover.url; limit 10;
         String body = """
@@ -38,14 +36,14 @@ public class IgdbClient {
                 """.formatted(escape(keyword), limit);
 
         try {
-            IgdbGameDto[] res = igdbRestClient.post()
+            IgdbGameSummaryDto[] res = igdbRestClient.post()
                     .uri("/games")
                     .contentType(MediaType.TEXT_PLAIN)
                     .header("Client-ID", props.clientId())
                     .header("Authorization", "Bearer " + tokenService.getAccessToken())
                     .body(body)
                     .retrieve() // 요청을 보내고 응답을 가져올 준비를 하는 단계, 응답(상태코드, 헤더, 바디)을 받을 수 있는 핸들러가 만들어짐
-                    .body(IgdbGameDto[].class); // 응답 body를 어떤 타입으로 변환해서 꺼낼지 정하는 것 IGDB가 JSON 배열을 준다 -> Jackson이 IgdbGameDto[]로 역직렬화 해줌
+                    .body(IgdbGameSummaryDto[].class); // 응답 body를 어떤 타입으로 변환해서 꺼낼지 정하는 것 IGDB가 JSON 배열을 준다 -> Jackson이 IgdbGameDto[]로 역직렬화 해줌
 
             return res == null ? List.of() : List.of(res);
 
@@ -56,24 +54,28 @@ public class IgdbClient {
     }
 
     // 게임 상세 가져오기(id로)
-    public IgdbGameDto getGame(long igdbId) {
+    public IgdbGameDetailDto getGameDetail(long igdbId) {
         String body = """
-                fields id,name,summary,first_release_date,genres.name,platforms.name,keywords.name,cover.url;
-                where id = %d;
-                limit 1;
-                """.formatted(igdbId);
+            fields
+                id,name,summary,first_release_date,
+                genres.id,genres.name,
+                platforms.id,platforms.name,
+                keywords.id,keywords.name,
+                cover.id,cover.image_id;
+            where id = %d;
+            limit 1;
+        """.formatted(igdbId);
 
-        IgdbGameDto[] res = igdbRestClient.post()
+        IgdbGameDetailDto res = igdbRestClient.post()
                 .uri("/games")
                 .contentType(MediaType.TEXT_PLAIN)
                 .header("Client-ID", props.clientId())
                 .header("Authorization", "Bearer " + tokenService.getAccessToken())
                 .body(body)
                 .retrieve()
-                .body(IgdbGameDto[].class);
+                .body(IgdbGameDetailDto.class);
 
-        if (res == null || res.length == 0) return null;
-        return res[0];
+        return res;
     }
 
     private String escape(String s) {
