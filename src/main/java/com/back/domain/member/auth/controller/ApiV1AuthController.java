@@ -6,6 +6,7 @@ import com.back.domain.member.auth.dto.AuthSignupRequest;
 import com.back.domain.member.auth.dto.AuthSignupResponse;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
+import com.back.global.rq.Rq;
 import com.back.global.rsData.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +19,17 @@ import org.springframework.web.bind.annotation.*;
 public class ApiV1AuthController {
 
     private final MemberService memberService;
+    private final Rq rq;
 
     @PostMapping("/login")
     @Transactional(readOnly = true)
     public RsData<AuthLoginResponse> login(@Valid @RequestBody AuthLoginRequest req) {
         Member member = memberService.login(req.email(), req.password());
         String accessToken = memberService.genAccessToken(member);
+
+        rq.setCookie("apiKey", member.getApiKey());
+        rq.setCookie("accessToken", accessToken);
+
         return new RsData<>("200-1", "로그인 성공",
                 new AuthLoginResponse(member, member.getApiKey(), accessToken));
     }
@@ -33,5 +39,12 @@ public class ApiV1AuthController {
     public RsData<AuthSignupResponse> signup(@Valid @RequestBody AuthSignupRequest req) {
         Member member = memberService.join(req.email(), req.password(), req.nickname());
         return new RsData<>("201-1", "회원가입 성공", new AuthSignupResponse(member));
+    }
+
+    @PostMapping("/logout")
+    public RsData<Void> logout() {
+        rq.deleteCookie("apiKey");
+        rq.deleteCookie("accessToken");
+        return new RsData<>("200-1", "로그아웃 성공", null);
     }
 }
