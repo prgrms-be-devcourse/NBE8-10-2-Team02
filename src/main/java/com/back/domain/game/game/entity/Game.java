@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -25,7 +24,7 @@ public class Game extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String name;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 5000)
     private String summary;
 
     private String coverImageId;
@@ -50,8 +49,11 @@ public class Game extends BaseEntity {
         return g;
     }
 
-    public void update(String name, String summary) {
+    public void updateDetail(String name, String summary, String coverImageId, long firstReleaseDateEpochSecond) {
         this.name = name;
         this.summary = summary;
+        this.coverImageId = coverImageId;
+        this.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDateEpochSecond);
+        this.lastFetchedAt = Instant.now();
     }
 }
