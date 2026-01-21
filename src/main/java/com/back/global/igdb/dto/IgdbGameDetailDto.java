@@ -12,7 +12,7 @@ public record IgdbGameDetailDto(
         Long firstReleaseDateEpochSeconds,
         IgdbCoverDto cover,
         List<IgdbGenreDto> genres,
-        List<IgdbKeywordDto> keywords,
+//        List<IgdbKeywordDto> keywords,
         List<IgdbPlatformDto> platforms
 ) {
 

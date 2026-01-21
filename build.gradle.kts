@@ -64,6 +64,11 @@ dependencies {
 	annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 	annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 
+    //caffeine
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
 }
 
 tasks.withType<Test> {

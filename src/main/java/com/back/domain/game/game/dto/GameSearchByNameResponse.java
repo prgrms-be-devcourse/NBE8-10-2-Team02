@@ -5,14 +5,14 @@ import com.back.standard.util.TimeUt;
 
 import java.time.LocalDate;
 
-public record GameSearchResponse(
+public record GameSearchByNameResponse(
         long igdbId,
         String name,
         String summary,
         LocalDate firstReleaseDate
 ) {
-    public static GameSearchResponse fromDto(IgdbGameSummaryDto d) {
-        return new GameSearchResponse(
+    public static GameSearchByNameResponse fromDto(IgdbGameSummaryDto d) {
+        return new GameSearchByNameResponse(
                 d.id(),
                 d.name(),
                 d.summary(),

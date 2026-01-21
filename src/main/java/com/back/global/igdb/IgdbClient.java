@@ -58,24 +58,24 @@ public class IgdbClient {
         String body = """
             fields
                 id,name,summary,first_release_date,
+                cover.id,cover.image_id,
                 genres.id,genres.name,
-                platforms.id,platforms.name,
-                keywords.id,keywords.name,
-                cover.id,cover.image_id;
+                platforms.id,platforms.name;
             where id = %d;
             limit 1;
         """.formatted(igdbId);
 
-        IgdbGameDetailDto res = igdbRestClient.post()
+        IgdbGameDetailDto[] res = igdbRestClient.post()
                 .uri("/games")
                 .contentType(MediaType.TEXT_PLAIN)
                 .header("Client-ID", props.clientId())
                 .header("Authorization", "Bearer " + tokenService.getAccessToken())
                 .body(body)
                 .retrieve()
-                .body(IgdbGameDetailDto.class);
+                .body(IgdbGameDetailDto[].class);
 
-        return res;
+        if (res == null || res.length == 0) return null;
+        return res[0];
     }
 
     private String escape(String s) {

@@ -1,7 +1,7 @@
 package com.back.domain.game.game.controller;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
-import com.back.domain.game.game.dto.GameSearchResponse;
+import com.back.domain.game.game.dto.GameSearchByNameResponse;
 import com.back.domain.game.game.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +14,9 @@ import java.util.List;
 public class ApiV1GameController {
     private final GameService gameService;
 
-    @GetMapping
-    public List<GameSearchResponse> search(@RequestParam String query) {
-        List<GameSearchResponse> searched = gameService.search(query);
+    @GetMapping("/searchByName")
+    public List<GameSearchByNameResponse> searchByName(@RequestParam String query) {
+        List<GameSearchByNameResponse> searched = gameService.search(query);
         return searched;
     }
 
