@@ -2,6 +2,9 @@ plugins {
 	java
 	id("org.springframework.boot") version "4.0.1"
 	id("io.spring.dependency-management") version "1.1.7"
+	kotlin("jvm") version "2.1.0"
+	kotlin("plugin.spring") version "2.1.0"
+	kotlin("plugin.jpa") version "2.1.0"
 }
 
 group = "com"
@@ -39,6 +42,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
+	
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
@@ -52,8 +56,32 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-restclient")
 
+	// 1. QueryDSL 라이브러리
+	implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
+
+	// 2. QClass 생성을 위한 핵심 엔진 (이 3개가 세트입니다)
+	annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
+	annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+	annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+
+    //caffeine
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+
+sourceSets {
+	main {
+		java {
+			srcDirs("build/generated/sources/annotationProcessor/java/main")
+		}
+	}
+}
+
+
