@@ -1,6 +1,6 @@
 package com.back.standard.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 public class Ut {
 
