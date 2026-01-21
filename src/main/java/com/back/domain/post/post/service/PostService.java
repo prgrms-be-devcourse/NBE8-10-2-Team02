@@ -26,11 +26,20 @@ public class PostService {
         return postRepository.findAll();
     }
 
-    public Post write(String title, String content) {
+    public Post write(String title, String content, List<String> tagNames) {
         Post post = new Post(title, content);
+        Post savedPost = postRepository.save(post);
 
-        return postRepository.save(post);
+        if (tagNames != null && !tagNames.isEmpty()) {
+            tagNames.forEach(tagName -> {
 
+                Tag tag = tagService.getOrCreate(tagName);
+
+                savedPost.addTag(tag);
+            });
+        }
+
+        return savedPost;
     }
 
 
@@ -87,6 +96,8 @@ public class PostService {
             throw new ServiceException("400-2", "게시글에 존재하지 않는 태그입니다.");
         }
     }
+
+
 
 
 }
