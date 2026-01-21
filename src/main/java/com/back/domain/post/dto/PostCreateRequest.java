@@ -15,5 +15,4 @@ public record PostCreateRequest(
         @Size(max = 5000)
         String content,
         List<String> tags
-//            List<String> tags
 ){}

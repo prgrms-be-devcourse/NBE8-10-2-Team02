@@ -46,7 +46,8 @@ public class PostController {
     ) {
         Post post = postService.write(
                 request.title(),
-                request.content()
+                request.content(),
+                request.tags()
         );
 
         return new PostDto(post);
@@ -130,6 +131,8 @@ public class PostController {
                 "태그가 게시글에서 제거되었습니다."
         );
     }
+
+
 
 
 }

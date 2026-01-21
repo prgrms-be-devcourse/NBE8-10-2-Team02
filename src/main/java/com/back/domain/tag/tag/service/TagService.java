@@ -47,8 +47,13 @@ public class TagService {
 //        tag.modify(content);
 //    }
 
+    public Tag getOrCreate(String content) {
+        return tagRepository.findBycontent(content)
+                .orElseGet(() -> tagRepository.save(new Tag(content)));
+    }
 
     //igdb에서 게임 제목을 태그로 가져옴
+    @Transactional
     public List<Tag> createTagsFromIgdb(long igdbId) {
         IgdbGameDto game = igdbClient.getGame(igdbId);
 
@@ -56,10 +61,10 @@ public class TagService {
             throw new ServiceException("404-3", "IGDB에서 정보를 찾을 수 없습니다.");
         }
 
-        List<Tag> createdTags = new ArrayList<>();
+        List<Tag> tags = new ArrayList<>();
+        tags.add(getOrCreate(game.name()));
 
-        createdTags.add(create(game.name()));
 
-        return createdTags;
+        return tags;
     }
 }
