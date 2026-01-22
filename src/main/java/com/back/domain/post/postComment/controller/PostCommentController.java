@@ -4,6 +4,7 @@ package com.back.domain.post.postComment.controller;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.service.PostService;
+import com.back.domain.post.postComment.PostCommentRepository;
 import com.back.domain.post.postComment.dto.PostCommentCreateRequest;
 import com.back.domain.post.postComment.dto.PostCommentDto;
 import com.back.domain.post.postComment.dto.PostCommentModifyRequest;
@@ -25,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostCommentController {
     private final PostService postService;
+    private final PostCommentRepository postCommentRepository;
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -69,10 +71,10 @@ public class PostCommentController {
         Post post = postService.findById(postId)
                 .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
-        PostComment postComment = post.findCommentById(id)
+        PostComment postComment = postCommentRepository.findById(id)
                 .orElseThrow(()-> new ServiceException("404-2", "해당 댓글을 찾을 수 없습니다."));
 
-        postService.deleteComment(post, postComment);
+        postService.deleteComment(postComment);
 
         return new RsData<>(
                 "200-1",
@@ -116,7 +118,7 @@ public class PostCommentController {
                 .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
         PostComment postComment =
-                postService.writeComment(post, reqBody.content());
+                postService.writeComment(post, reqBody.content(), reqBody.parentId());
 
         postService.flush();
 
