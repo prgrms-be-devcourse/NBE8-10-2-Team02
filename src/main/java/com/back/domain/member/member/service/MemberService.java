@@ -58,4 +58,12 @@ public class MemberService {
     public Map<String, Object> payload(String accessToken) {
         return authTokenService.payload(accessToken);
     }
+
+    public boolean existsByEmail(String email) {
+        return memberRepository.existsByEmail(email);
+    }
+
+    public boolean existsByNickname(String nickname) {
+        return memberRepository.existsByNickname(nickname);
+    }
 }
