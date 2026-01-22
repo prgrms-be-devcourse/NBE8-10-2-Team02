@@ -8,6 +8,8 @@ import com.back.domain.tag.tag.entity.Tag;
 import com.back.domain.tag.tag.service.TagService;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +24,8 @@ public class PostService {
     private  final TagService tagService;
 
 
-    public List<Post> findAll() {
-        return postRepository.findAll();
+    public Page<Post> findAll(Pageable pageable) {
+        return postRepository.findAll(pageable);
     }
 
     public Post write(String title, String content, List<String> tagNames) {
@@ -51,12 +53,12 @@ public class PostService {
         return postRepository.findById(id);
     }
 
-    public List<Post> searchByTitle(String keyword){
-        return postRepository.findByTitleContainingIgnoreCase(keyword);
+    public Page<Post> searchByTitle(String keyword, Pageable pageable){
+        return postRepository.findByTitleContainingIgnoreCase(keyword, pageable);
     }
 
-    public List<Post> searchByTagName(String tagName){
-        return postRepository.findByPostTags_Tag_Content(tagName);
+    public Page<Post> searchByTagName(String tagName, Pageable pageable){
+        return postRepository.findByPostTags_Tag_Content(tagName, pageable);
     }
 
     public PostComment writeComment(Post post, String content) {

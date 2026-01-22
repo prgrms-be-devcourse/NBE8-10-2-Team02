@@ -12,6 +12,10 @@ import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,12 +28,13 @@ public class PostController {
     private final TagService tagService;
 
     @GetMapping
-    public List<PostDto> getItems(){
-        List<Post> items = postService.findAll();
+    public RsData<Page<PostDto>> getItems(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC)Pageable pageable
+            ){
+        Page<Post> items = postService.findAll(pageable);
 
-        return items.stream()
-                .map(PostDto::new)
-                .toList();
+        Page<PostDto> postDtos = items.map(PostDto::new);
+        return new RsData<>("200-1", "게시글 목록 조회", postDtos);
     }
 
     @GetMapping("/{id}")
@@ -82,23 +87,26 @@ public class PostController {
     }
 
     @GetMapping("/search")
-    public List<PostDto> searchByTitle(
-            @RequestParam String keyword
+    public RsData<Page<PostDto>> searchByTitle(
+            @RequestParam String keyword,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        return postService.searchByTitle(keyword)
-                .stream()
-                .map(PostDto::new)
-                .toList();
+
+        Page<Post> page = postService.searchByTitle(keyword, pageable);
+        Page<PostDto> postDtos = page.map(PostDto :: new);
+
+        return new RsData<>("200-1", "제목 조회", postDtos);
     }
 
     @GetMapping("/tag")
-    public List<PostDto> searchByTag(
-            @RequestParam String tagName
+    public RsData<Page<PostDto>> searchByTag(
+            @RequestParam String tagName,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        return postService.searchByTagName(tagName)
-                .stream()
-                .map(PostDto::new)
-                .toList();
+        Page<PostDto> postDtos = postService.searchByTagName(tagName, pageable)
+                .map(PostDto::new);
+
+        return new RsData<>("200-1", "태그 조회", postDtos);
     }
 
     @PostMapping("/{id}/tags/{tagId}")
