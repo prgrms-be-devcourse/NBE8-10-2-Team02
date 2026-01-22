@@ -3,6 +3,7 @@ package com.back.domain.post.post.service;
 import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
+import com.back.domain.post.postComment.PostCommentRepository;
 import com.back.domain.post.postComment.entity.PostComment;
 import com.back.domain.tag.tag.entity.Tag;
 import com.back.domain.tag.tag.service.TagService;
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class PostService {
     private final PostRepository postRepository;
     private  final TagService tagService;
+    private final PostCommentRepository postCommentRepository;
 
 
     public Page<Post> findAll(Pageable pageable) {
@@ -61,12 +63,40 @@ public class PostService {
         return postRepository.findByPostTags_Tag_Content(tagName, pageable);
     }
 
-    public PostComment writeComment(Post post, String content) {
-        return post.addComment(content);
+    public PostComment writeComment(Post post, String content, Integer parentCommentId) {
+        PostComment comment = new PostComment();
+        comment.setPost(post);
+        comment.setContent(content);
+
+        if(parentCommentId != null){
+            PostComment parent = postCommentRepository.findById(parentCommentId)
+                    .orElseThrow(()->new ServiceException("404-1", "댓글을 찾을 수 없습니다."));
+            comment.setParent(parent);
+
+            if(parent.getParent() != null){
+                throw new ServiceException("400-3", "대댓글에는 답글을 달 수 없습니다.");
+            }
+            comment.setParent(parent);
+        }
+        return postCommentRepository.save(comment);
     }
 
-    public boolean deleteComment(Post post, PostComment postComment) {
-        return post.deleteComment(postComment);
+    public void deleteComment(PostComment postComment) {
+        if (!postComment.getChildren().isEmpty()) {
+            postComment.markAsDeleted();
+        }
+        else {
+            PostComment parent = postComment.getParent();
+
+            if (parent != null) {
+                parent.getChildren().remove(postComment);
+            }
+            postCommentRepository.delete(postComment);
+
+            if (parent != null && parent.isDeleted() && parent.getChildren().isEmpty()) {
+                postCommentRepository.delete(parent);
+            }
+        }
     }
 
     public void modifyComment(PostComment postComment, String content) {
