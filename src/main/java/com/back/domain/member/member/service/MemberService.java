@@ -4,11 +4,13 @@ import com.back.domain.member.auth.service.AuthTokenService;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
 import com.back.global.exception.ServiceException;
-import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,11 +18,22 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-
     private final AuthTokenService authTokenService;
 
     public Optional<Member> findByEmail(String email) {
         return memberRepository.findByEmail(email);
+    }
+
+    public Optional<Member> findByApiKey(String apiKey) {
+        return memberRepository.findByApiKey(apiKey);
+    }
+
+    public boolean existsByEmail(String email) {
+        return memberRepository.existsByEmail(email);
+    }
+
+    public boolean existsByNickname(String nickname) {
+        return memberRepository.existsByNickname(nickname);
     }
 
     public Member join(String email, String password, String nickname) {
@@ -47,10 +60,6 @@ public class MemberService {
         return member;
     }
 
-    public Optional<Member> findByApiKey(String apiKey) {
-        return memberRepository.findByApiKey(apiKey);
-    }
-
     public String genAccessToken(Member member) {
         return authTokenService.genAccessToken(member);
     }
@@ -59,11 +68,21 @@ public class MemberService {
         return authTokenService.payload(accessToken);
     }
 
-    public boolean existsByEmail(String email) {
-        return memberRepository.existsByEmail(email);
-    }
+    @Transactional
+    public Member changePassword(int memberId, String oldPassword, String newPassword) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
 
-    public boolean existsByNickname(String nickname) {
-        return memberRepository.existsByNickname(nickname);
+        if (!passwordEncoder.matches(oldPassword, member.getPassword())) {
+            throw new ServiceException("401-2", "현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        if (passwordEncoder.matches(newPassword, member.getPassword())) {
+            throw new ServiceException("400-2", "새 비밀번호는 기존 비밀번호와 달라야 합니다.");
+        }
+
+        String encoded = passwordEncoder.encode(newPassword);
+        member.changePassword(encoded);
+        return member;
     }
 }

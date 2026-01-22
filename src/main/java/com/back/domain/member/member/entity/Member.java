@@ -38,4 +38,8 @@ public class Member extends BaseEntity {
         this.nickname = nickname;
         this.apiKey = UUID.randomUUID().toString();
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }
