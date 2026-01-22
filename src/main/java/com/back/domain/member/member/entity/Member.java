@@ -3,6 +3,7 @@ package com.back.domain.member.member.entity;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -31,4 +32,10 @@ public class Member extends BaseEntity {
     @LastModifiedDate
     private LocalDateTime modifyDate;
 
+    public Member(String email, String password, String nickname) {
+        this.email = email;
+        this.password = password;
+        this.nickname = nickname;
+        this.apiKey = UUID.randomUUID().toString();
+    }
 }
