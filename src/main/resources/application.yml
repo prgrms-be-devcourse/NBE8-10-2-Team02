@@ -34,7 +34,7 @@ logging:
     org.springframework.security: DEBUG
 custom:
   jwt:
-    secretKey: abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789
+    secretKey: "${JWT_SECRET_KEY}"
   accessToken:
     expirationSeconds: "#{60*5}"
 igdb:
