@@ -9,6 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Integer> {
-    List<Post> findByTitleContainingIgnoreCase(String keyword);
-    List<Post> findByPostTags_Tag_Content(String content);
+    Page<Post> findByTitleContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<Post> findByPostTags_Tag_Content(String content, Pageable pageable);
 }
