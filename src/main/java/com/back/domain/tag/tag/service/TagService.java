@@ -4,8 +4,7 @@ import com.back.domain.tag.tag.entity.Tag;
 import com.back.domain.tag.tag.repository.TagRepository;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
-import com.back.global.igdb.dto.IgdbGameDto;
-import com.back.global.igdb.dto.IgdbGenreDto;
+import com.back.global.igdb.dto.IgdbGameDetailDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +54,7 @@ public class TagService {
     //igdb에서 게임 제목을 태그로 가져옴
     @Transactional
     public List<Tag> createTagsFromIgdb(long igdbId) {
-        IgdbGameDto game = igdbClient.getGame(igdbId);
+        IgdbGameDetailDto game = igdbClient.getGameDetail(igdbId);
 
         if (game == null) {
             throw new ServiceException("404-3", "IGDB에서 정보를 찾을 수 없습니다.");

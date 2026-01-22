@@ -1,11 +1,15 @@
 package com.back.domain.game.game.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(
         name = "genre",
@@ -17,8 +21,8 @@ public class Genre {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "igdb_id",nullable = false)
-    public Long igdbId;
+    @Column(name = "igdb_id", nullable = false)
+    private Long igdbId;
 
     @Column(nullable = false)
     private String name;
@@ -29,5 +33,10 @@ public class Genre {
         g.name = name;
 
         return g;
+    }
+
+    public Genre(Long igdbId, String name) {
+        this.igdbId = igdbId;
+        this.name = name;
     }
 }

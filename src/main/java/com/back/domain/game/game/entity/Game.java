@@ -5,13 +5,18 @@ import com.back.standard.util.TimeUt;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Entity;
+import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "game",
         uniqueConstraints = @UniqueConstraint(name = "uk_game_igdb_id", columnNames = "igdb_id"),
@@ -21,7 +26,6 @@ public class Game extends BaseEntity {
     @Column(name = "igdb_id", nullable = false)
     private long igdbId;
 
-    @Column(nullable = false, length = 200)
     private String name;
 
     @Column(nullable = false, length = 5000)
@@ -30,6 +34,13 @@ public class Game extends BaseEntity {
     private String coverImageId;
     private LocalDate firstReleaseDate;
     private Instant lastFetchedAt;
+
+    @OneToMany(mappedBy = "game")
+    private List<GameGenre> gameGenres;
+
+    @OneToMany(mappedBy = "game")
+    private List<GamePlatform> gamePlatforms;
+
 
     public static Game createGame(
             long igdbId,
