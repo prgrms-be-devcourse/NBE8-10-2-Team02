@@ -21,21 +21,21 @@ public record GameSearchResponse(
         // developerName 추가예정
 ) {
     public static GameSearchResponse fromDto(
-        IgdbGameSummaryDto d,
-        Map<Long, String> genreMap
+            IgdbGameSummaryDto d,
+            Map<Long, String> genreMap
     ) {
-            return new GameSearchResponse(
-                    d.id(),
-                    d.name(),
-                    IgdbImageUtil.cover(
-                            d.cover() != null ? d.cover().imageId() : null
-                    ),
-                    TimeUt.epoch.toLocalDate(d.firstReleaseDateEpochSeconds()),
-                    d.genres().stream()
-                            .map(genreMap::get)
-                            .filter(Objects::nonNull)
-                            .toList()
-            );
+        return new GameSearchResponse(
+                d.id(),
+                d.name(),
+                IgdbImageUtil.cover(
+                        d.cover() != null ? d.cover().imageId() : null
+                ),
+                TimeUt.epoch.toLocalDate(d.firstReleaseDateEpochSeconds()),
+                d.genres().stream()
+                        .map(genreMap::get)
+                        .filter(Objects::nonNull)
+                        .toList()
+        );
     }
 
     // DB 엔티티 변환용
