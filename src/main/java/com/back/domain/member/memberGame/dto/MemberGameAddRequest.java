@@ -1,14 +1,15 @@
 package com.back.domain.member.memberGame.dto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record MemberGameAddRequest(
         @NotBlank
         String platform,
-        @NotBlank
+        @NotNull
         double playtime,
-        @NotBlank
+        @NotNull
         boolean isFavorite,
-        @NotBlank
+        @NotNull
         int gameId
 ) {
 }
