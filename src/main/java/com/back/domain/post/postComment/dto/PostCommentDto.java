@@ -8,6 +8,8 @@ import java.util.List;
 
 public record PostCommentDto(
             int id,
+            int authorId,
+            String authorName,
             String content,
             List<PostCommentDto> children,
             boolean deleted,
@@ -18,6 +20,8 @@ public record PostCommentDto(
         public PostCommentDto(PostComment postComment){
             this(
                     postComment.getId(),
+                    postComment.getAuthor().getId(),
+                    postComment.getAuthor().getNickname(),
                     postComment.isDeleted() ? "삭제된 댓글입니다." : postComment.getContent(),
                     postComment.getChildren()
                                     .stream()

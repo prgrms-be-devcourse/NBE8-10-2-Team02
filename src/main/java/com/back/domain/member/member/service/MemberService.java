@@ -28,6 +28,10 @@ public class MemberService {
         return memberRepository.findByApiKey(apiKey);
     }
 
+    public Optional<Member> findById(int id) {
+        return memberRepository.findById(id);
+    }
+
     public boolean existsByEmail(String email) {
         return memberRepository.existsByEmail(email);
     }

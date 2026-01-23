@@ -1,5 +1,6 @@
 package com.back.domain.post.post.service;
 
+import com.back.domain.member.member.entity.Member;
 import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
@@ -30,8 +31,8 @@ public class PostService {
         return postRepository.findAll(pageable);
     }
 
-    public Post write(String title, String content, List<String> tagNames) {
-        Post post = new Post(title, content);
+    public Post write(Member author, String title, String content, List<String> tagNames) {
+        Post post = new Post(author, title, content);
         Post savedPost = postRepository.save(post);
 
         if (tagNames != null && !tagNames.isEmpty()) {
@@ -63,10 +64,11 @@ public class PostService {
         return postRepository.findByPostTags_Tag_Content(tagName, pageable);
     }
 
-    public PostComment writeComment(Post post, String content, Integer parentCommentId) {
+    public PostComment writeComment(Member author, Post post, String content, Integer parentCommentId) {
         PostComment comment = new PostComment();
         comment.setPost(post);
         comment.setContent(content);
+        comment.setAuthor(author);
 
         if(parentCommentId != null){
             PostComment parent = postCommentRepository.findById(parentCommentId)
@@ -129,7 +131,11 @@ public class PostService {
         }
     }
 
-
+    public void checkPermission(Post post, Member author){
+        if(post.getAuthor().getId() != author.getId()){
+            throw new ServiceException("403-1", "해당 게시글에 대한 권한이 없습니다.");
+        }
+    }
 
 
 }
