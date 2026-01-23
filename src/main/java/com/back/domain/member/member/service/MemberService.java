@@ -1,9 +1,13 @@
 package com.back.domain.member.member.service;
 
 import com.back.domain.member.auth.service.AuthTokenService;
+import com.back.domain.game.game.entity.Game;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
+import com.back.domain.member.memberGame.entity.MemberGame;
+import com.back.domain.member.memberGame.repository.MemberGameRepository;
 import com.back.global.exception.ServiceException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -68,6 +72,7 @@ public class MemberService {
         return authTokenService.payload(accessToken);
     }
 
+
     @Transactional
     public Member changePassword(int memberId, String oldPassword, String newPassword) {
         Member member = memberRepository.findById(memberId)
@@ -84,5 +89,11 @@ public class MemberService {
         String encoded = passwordEncoder.encode(newPassword);
         member.changePassword(encoded);
         return member;
+    }
+    public MemberGame addToLibrary(String platform, double playtime, boolean isFavorite,  Member member, Game game) {
+        return member.addMemberGame(platform, playtime, isFavorite, game);
+    }
+    public void flush(){
+        memberRepository.flush();
     }
 }
