@@ -39,10 +39,11 @@ public class PostComment extends BaseEntity {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private List<PostComment> children = new ArrayList<>();
 
-//    @ManyToOne(fetch = LAZY)
-//    private Member author;
+    @ManyToOne(fetch = LAZY)
+    private Member author;
 
-    public PostComment(Post post, String content) {
+    public PostComment(Member author, Post post, String content) {
+        this.author = author;
         this.post = post;
         this.content = content;
     }
@@ -56,4 +57,5 @@ public class PostComment extends BaseEntity {
         this.content = "삭제된 댓글입니다.";
         this.deleted = true;
     }
+
 }

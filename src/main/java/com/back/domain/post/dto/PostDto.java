@@ -10,6 +10,8 @@ import java.util.List;
 public record PostDto (
 
     int id,
+    int authorId,
+    String authorName,
     String title,
     String content,
     LocalDateTime createDate,
@@ -19,6 +21,8 @@ public record PostDto (
     public PostDto(Post post) {
         this(
         post.getId(),
+        post.getAuthor().getId(),
+        post.getAuthor().getNickname(),
         post.getTitle(),
         post.getContent(),
         post.getCreateDate(),

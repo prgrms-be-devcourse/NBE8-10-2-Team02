@@ -32,8 +32,8 @@ public class Post extends BaseEntity {
     @LastModifiedDate
     private LocalDateTime modifyDate;
 
-//    @ManyToOne(fetch = LAZY)
-//    private Member author;
+    @ManyToOne(fetch = LAZY)
+    private Member author;
 
     @OneToMany(mappedBy = "post", cascade = {PERSIST, REMOVE}, orphanRemoval = true)
     private List<PostComment> comments = new ArrayList<>();
@@ -41,13 +41,14 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post", cascade = ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();
 
-    public Post(String title, String content) {
-    this.title = title;
-    this.content = content;
+    public Post(Member author, String title, String content) {
+        this.author = author;
+        this.title = title;
+        this.content = content;
     }
 
-    public static Post create(String title, String content) {
-        return new Post(title, content);
+    public static Post create(Member author, String title, String content) {
+        return new Post(author, title, content);
     }
 
     public void modify(String title, String content) {
@@ -55,8 +56,8 @@ public class Post extends BaseEntity {
         this.content = content;
     }
 
-    public PostComment addComment(String content) {
-        PostComment postComment = new PostComment(this, content);
+    public PostComment addComment(Member author, String content) {
+        PostComment postComment = new PostComment(author,this, content);
         comments.add(postComment);
 
         return postComment;
