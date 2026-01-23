@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -29,6 +28,11 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
     private final MemberService memberService;
     private final Rq rq;
 
+    /**
+     * 필터 적용 제외 경로
+     * - /api 가 아니면 패스
+     * - 인증 관련(/api/v1/auth/**), swagger, h2-console 은 패스
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
@@ -48,9 +52,8 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-
         try {
-            work(response);
+            work(); // 인증 처리
             filterChain.doFilter(request, response);
         } catch (ServiceException e) {
             RsData<Void> rsData = e.getRsData();
@@ -60,7 +63,15 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    private void work(HttpServletResponse response) {
+    /**
+     * 인증 흐름
+     * 1) Authorization 헤더가 있으면 우선 사용
+     *    - "Bearer {accessToken}" 또는 "Bearer {apiKey} {accessToken}"
+     * 2) Authorization 헤더가 없으면 쿠키(apiKey/accessToken) 사용
+     * 3) accessToken 유효하면 그걸로 인증 세팅
+     * 4) accessToken이 없거나 유효하지 않으면 apiKey로 회원 조회 후 인증 세팅 + accessToken 재발급(쿠키 갱신)
+     */
+    private void work() {
         String apiKey = "";
         String accessToken = "";
 
@@ -71,6 +82,8 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                 throw new ServiceException("401-2", "Authorization 헤더가 Bearer 형식이 아닙니다.");
             }
 
+            // Bearer <accessToken>
+            // Bearer <apiKey> <accessToken>
             String[] bits = authorization.split(" ", 3);
 
             if (bits.length == 2) {
@@ -87,13 +100,16 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         boolean hasApiKey = !apiKey.isBlank();
         boolean hasAccessToken = !accessToken.isBlank();
 
+        // 둘 다 없으면 인증 시도 자체를 하지 않고 다음 필터로 넘김
         if (!hasApiKey && !hasAccessToken) return;
 
+        // accessToken이 있으면 우선 검증
         if (hasAccessToken) {
             Map<String, Object> payload = memberService.payload(accessToken);
 
             if (payload != null) {
-                int id = (int) payload.get("id");
+                // 주의: payload map에서 숫자가 Integer/Long 등으로 올 수 있음
+                int id = ((Number) payload.get("id")).intValue();
                 String email = (String) payload.get("email");
                 String nickname = (String) payload.get("nickname");
 
@@ -102,27 +118,29 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // accessToken이 유효하지 않았는데 apiKey도 없으면 실패
         if (!hasApiKey) {
             throw new ServiceException("401-4", "토큰이 유효하지 않습니다.");
         }
 
+        // apiKey로 회원 조회
         Member member = memberService.findByApiKey(apiKey)
                 .orElseThrow(() -> new ServiceException("401-3", "API 키가 유효하지 않습니다."));
 
         setAuthentication(member.getId(), member.getEmail(), member.getNickname());
 
+        // 새 accessToken 발급 + 쿠키 갱신
         String newAccessToken = memberService.genAccessToken(member);
         rq.setCookie("accessToken", newAccessToken);
     }
 
     private void setAuthentication(int id, String email, String nickname) {
-        // SecurityUser(id, email, nickname, password, authorities)
         UserDetails user = new SecurityUser(
                 id,
                 email,
                 nickname,
-                "",                 // password (안 쓰면 빈 문자열)
-                java.util.List.of() // authorities (지금은 비어도 됨)
+                "",
+                java.util.List.of()
         );
 
         Authentication authentication =
@@ -131,6 +149,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                         user.getPassword(),
                         user.getAuthorities()
                 );
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

@@ -34,8 +34,10 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
 
+                // ✅ 쿠키/Authorization 기반 인증 처리 필터
                 .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
+                // ✅ 인증/권한 실패 시 RsData(JSON)로 통일해서 응답
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
@@ -51,17 +53,30 @@ public class SecurityConfig {
                                     Ut.json.toString(new RsData<Void>("403-1", "권한이 없습니다."))
                             );
                         })
-                )
-
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/members/check-nickname").permitAll()
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
                 );
+
+        // =========================
+        // ✅ 정상 코드(최종): /api/** 는 로그인 필요
+        // =========================
+        // http.authorizeHttpRequests(auth -> auth
+        //         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        //         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+        //         .requestMatchers("/h2-console/**").permitAll()
+        //         .requestMatchers("/api/v1/auth/**").permitAll()
+        //         .requestMatchers(HttpMethod.GET, "/api/v1/members/check-nickname").permitAll()
+        //         .requestMatchers("/api/**").authenticated()
+        //         .anyRequest().permitAll()
+        // );
+
+        // =========================
+        // ⚠️ 테스트용(임시): 로그인 없이 전부 허용
+        // - 프론트/포스트맨 개발 초반 편의를 위한 설정
+        // - 테스트 종료 후 위 "정상 코드"로 되돌릴 것
+        // =========================
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .anyRequest().permitAll()
+        );
 
         return http.build();
     }
