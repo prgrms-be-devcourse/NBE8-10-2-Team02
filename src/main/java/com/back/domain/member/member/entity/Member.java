@@ -51,6 +51,11 @@ public class Member extends BaseEntity {
         this.nickname = nickname;
         this.apiKey = UUID.randomUUID().toString();
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
     public MemberGame addMemberGame(String platform, double playtime, boolean isFavorite, Game game) {
         MemberGame memberGame = new MemberGame(platform, playtime, isFavorite, this, game);
         library.add(memberGame);
