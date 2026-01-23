@@ -1,5 +1,7 @@
 package com.back.domain.game.game.service;
 
+import com.back.domain.game.game.entity.Game;
+import com.back.domain.game.game.repository.GameRepository;
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameSearchByNameResponse;
 import com.back.domain.game.game.entity.*;
@@ -14,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -43,7 +48,7 @@ public class GameService {
                 .map(GameSearchByNameResponse::fromDto).toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public GameDetailResponse getGameDetail(long igdbId) {
         // 1. cache에서 찾기
         GameDetailResponse cached = gameDetailCache.getIfPresent(igdbId);
@@ -81,7 +86,6 @@ public class GameService {
                 .orElse(null);
     }
 
-    @Transactional
     private GameDetailResponse fetchPersistAndAssemble(long igdbId) {
         //igdb 호출
         IgdbGameDetailDto dto = igdbClient.getGameDetail(igdbId);
@@ -176,5 +180,19 @@ public class GameService {
     private boolean isFresh(Game game) {
         Instant t = game.getLastFetchedAt();
         return t != null && t.isAfter(Instant.now().minus(DB_STALE_AFTER));
+    }
+
+    public Optional<Game> findById(int id) {
+        return gameRepository.findById(id);
+    }
+
+    public Game createGame(Long igdbId, String name, String summary, String coverImage, LocalDate firstReleaseDate) {
+        Game game = Game.createGame(
+                        igdbId,
+                        name,
+                        summary,
+                        coverImage,
+                        firstReleaseDate
+                );        return gameRepository.save(game);
     }
 }
