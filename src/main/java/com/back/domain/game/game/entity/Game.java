@@ -59,6 +59,23 @@ public class Game extends BaseEntity {
 
         return g;
     }
+    public static Game createGame(
+            long igdbId,
+            String name,
+            String summary,
+            String imageId,
+            LocalDate firstReleaseDate
+    ) {
+        Game g = new Game();
+        g.igdbId = igdbId;
+        g.name = name;
+        g.summary = summary;
+        g.coverImageId = imageId;
+        g.firstReleaseDate = firstReleaseDate;
+        g.lastFetchedAt = Instant.now();
+
+        return g;
+    }
 
     public void updateDetail(String name, String summary, String coverImageId, long firstReleaseDateEpochSecond) {
         this.name = name;
@@ -66,5 +83,10 @@ public class Game extends BaseEntity {
         this.coverImageId = coverImageId;
         this.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDateEpochSecond);
         this.lastFetchedAt = Instant.now();
+    }
+    public Game(String name, String summary, LocalDate firstReleaseDate) {
+        this.name = name;
+        this.summary = summary;
+        this.firstReleaseDate = firstReleaseDate;
     }
 }
