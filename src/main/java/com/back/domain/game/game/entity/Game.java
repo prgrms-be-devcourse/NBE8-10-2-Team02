@@ -84,9 +84,4 @@ public class Game extends BaseEntity {
         this.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDateEpochSecond);
         this.lastFetchedAt = Instant.now();
     }
-    public Game(String name, String summary, LocalDate firstReleaseDate) {
-        this.name = name;
-        this.summary = summary;
-        this.firstReleaseDate = firstReleaseDate;
-    }
 }
