@@ -13,6 +13,7 @@ import com.back.domain.game.game.repository.GenreRepository;
 import com.back.domain.game.game.service.GameSearchService;
 import com.back.domain.game.game.service.GameService;
 
+import com.back.domain.game.game.service.GenreService;
 import com.back.domain.game.platform.PlatformGroup;
 import com.back.domain.game.game.dto.PlatformResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ import java.util.List;
 public class ApiV1GameController {
     private final GameService gameService;
     private final GameSearchService gameSearchService;
-    private final GenreRepository genreRepository;
+    private final GenreService genreService;
 
     @GetMapping("/games/{igdbId}")
     public GameDetailResponse getGameDetail(@PathVariable long igdbId) {
@@ -61,9 +62,7 @@ public class ApiV1GameController {
 //    장르 필터링
     @GetMapping("/genres")
     public List<GenreResponse> getGenres() {
-        return genreRepository.findAll().stream()
-                .map(g -> new GenreResponse(g.getIgdbId(), g.getName()))
-                .toList();
+        return genreService.getGenres();
     }
 
 //    플랫폼 필터링
