@@ -36,12 +36,6 @@ public class Member extends BaseEntity {
     @Column(unique = true, length = 30, nullable = false)
     private String nickname;
 
-    @CreatedDate
-    private LocalDateTime createDate;
-
-    @LastModifiedDate
-    private LocalDateTime modifyDate;
-
     @OneToMany(mappedBy = "member", fetch = LAZY, cascade = {PERSIST, REMOVE}, orphanRemoval = true)
     private List<MemberGame> library = new ArrayList<>();
 
@@ -50,6 +44,12 @@ public class Member extends BaseEntity {
         this.password = password;
         this.nickname = nickname;
         this.apiKey = UUID.randomUUID().toString();
+    }
+
+    public Member(int id, String email, String nickname) {
+        setId(id);
+        this.email = email;
+        this.nickname = nickname;
     }
 
     public void changePassword(String encodedPassword) {
