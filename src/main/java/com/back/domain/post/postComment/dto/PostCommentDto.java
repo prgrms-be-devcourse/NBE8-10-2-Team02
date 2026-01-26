@@ -12,6 +12,7 @@ public record PostCommentDto(
             String authorName,
             String content,
             List<PostCommentDto> children,
+            Integer parentId,
             boolean deleted,
             LocalDateTime createdDate,
             LocalDateTime modifyDate,
@@ -27,6 +28,7 @@ public record PostCommentDto(
                                     .stream()
                                             .map(PostCommentDto::new)
                                                     .toList(),
+                    postComment.getParent() != null ? postComment.getParent().getId() : null,
                     postComment.isDeleted(),
                     postComment.getCreateDate(),
                     postComment.getModifyDate(),
