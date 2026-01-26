@@ -56,6 +56,7 @@ public class TagService {
     //igdb에서 게임 제목을 태그로 가져옴
     @Transactional
     public List<Tag> createTagsFromIgdb(long igdbId) {
+        /*TODO: game name만 검색하는거 따로 빼기*/
         IgdbGameDetailDto game = igdbClient.getGameDetail(igdbId);
 
         if (game == null) {

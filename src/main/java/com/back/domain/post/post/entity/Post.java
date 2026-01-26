@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tags;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -22,6 +23,7 @@ import static jakarta.persistence.FetchType.*;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 public class Post extends BaseEntity {
     private String title;
@@ -40,6 +42,12 @@ public class Post extends BaseEntity {
 
     @OneToMany(mappedBy = "post", cascade = ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int viewCount;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> postLikes = new ArrayList<>();
 
     public Post(Member author, String title, String content) {
         this.author = author;

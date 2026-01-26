@@ -1,6 +1,11 @@
 package com.back.domain.game.game.controller;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
+import com.back.domain.game.game.dto.GameSearchByNameResponse;
+import com.back.domain.game.game.dto.GameVideoResponse;
+import com.back.domain.game.game.dto.SimilarGameResponse;
+import com.back.domain.game.game.service.GameService;
+import com.back.global.rsData.RsData;
 import com.back.domain.game.game.dto.GameSearchCondition;
 import com.back.domain.game.game.dto.GameSearchResponse;
 import com.back.domain.game.game.dto.GenreResponse;
@@ -8,6 +13,7 @@ import com.back.domain.game.game.repository.GenreRepository;
 import com.back.domain.game.game.service.GameSearchService;
 import com.back.domain.game.game.service.GameService;
 
+import com.back.domain.game.game.service.GenreService;
 import com.back.domain.game.platform.PlatformGroup;
 import com.back.domain.game.game.dto.PlatformResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +27,21 @@ import java.util.List;
 public class ApiV1GameController {
     private final GameService gameService;
     private final GameSearchService gameSearchService;
-    private final GenreRepository genreRepository;
+    private final GenreService genreService;
 
     @GetMapping("/games/{igdbId}")
-    public GameDetailResponse getGame(@PathVariable Long igdbId) {
-        GameDetailResponse game = gameService.getGameDetail(igdbId);
+    public GameDetailResponse getGameDetail(@PathVariable long igdbId) {
+        return gameService.getGameDetail(igdbId);
+    }
 
-        return game;
+    @GetMapping("/games/{igdbId}/video")
+    public GameVideoResponse getVideoId(@PathVariable long igdbId) {
+        return gameService.getVideoId(igdbId);
+    }
+
+    @GetMapping("/games/{igdbId}/similarGames")
+    public List<SimilarGameResponse> getSimilarGames(@PathVariable long igdbId) {
+        return gameService.getSimilarGames(igdbId);
     }
 
     //    슬기구현
@@ -48,9 +62,7 @@ public class ApiV1GameController {
 //    장르 필터링
     @GetMapping("/genres")
     public List<GenreResponse> getGenres() {
-        return genreRepository.findAll().stream()
-                .map(g -> new GenreResponse(g.getIgdbId(), g.getName()))
-                .toList();
+        return genreService.getGenres();
     }
 
 //    플랫폼 필터링

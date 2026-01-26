@@ -4,15 +4,17 @@ import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.repository.GameRepository;
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameSearchByNameResponse;
+import com.back.domain.game.game.dto.GameVideoResponse;
+import com.back.domain.game.game.dto.SimilarGameResponse;
 import com.back.domain.game.game.entity.*;
 import com.back.domain.game.game.repository.*;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
-import com.back.global.igdb.dto.IgdbGameDetailDto;
-import com.back.global.igdb.dto.IgdbGenreDto;
-import com.back.global.igdb.dto.IgdbPlatformDto;
+import com.back.global.igdb.dto.*;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GameService {
@@ -36,8 +39,10 @@ public class GameService {
     private final IgdbClient igdbClient;
 
     private final Cache<Long, GameDetailResponse> gameDetailCache;
+    private final Cache<Long, GameVideoResponse> videoIdCache;
+    private final Cache<Long, List<Long>> similarIdsCache;
+    private final Cache<Long, List<SimilarGameResponse>> similarListCache;
 
-    //DB stale 판단 기준 -> snapshot 후 7일이 지나면 stale
     private static final Duration DB_STALE_AFTER = Duration.ofDays(7);
 
     public List<GameSearchByNameResponse> search(String q) {
@@ -52,8 +57,7 @@ public class GameService {
     public GameDetailResponse getGameDetail(long igdbId) {
         // 1. cache에서 찾기
         GameDetailResponse cached = gameDetailCache.getIfPresent(igdbId);
-        if (cached != null)
-            return cached;
+        if (cached != null) return cached;
 
         // 2. cache miss -> DB에서 찾기
         GameDetailResponse fromDb = findDetailFromDb(igdbId);
@@ -68,51 +72,131 @@ public class GameService {
         return fetched;
     }
 
+    public GameVideoResponse getVideoId(long igdbId) {
+        // 1. cache에서 찾기
+        GameVideoResponse cached = videoIdCache.getIfPresent(igdbId);
+        if (cached != null) return cached;
+
+        // 2. api호출
+        GameVideoResponse fetched = fetchVideoId(igdbId);
+        videoIdCache.put(igdbId, fetched);
+        return fetched;
+    }
+
+    public List<SimilarGameResponse> getSimilarGames(long igdbId) {
+        // 1. cachedList에서 찾기
+        List<SimilarGameResponse> cachedList = similarListCache.getIfPresent(igdbId);
+        if (cachedList != null) return cachedList;
+
+        // 2. similar ids 캐시 확인
+        List<Long> ids = similarIdsCache.getIfPresent(igdbId);
+
+        // 3. ids가 없으면 igdb에서 similarGames id만 조회 후 캐시에 저장
+        if (ids == null) {
+            ids = igdbClient.getSimilarGameIds(igdbId);
+            if (ids == null) ids = Collections.emptyList();
+            similarIdsCache.put(igdbId, ids);
+        }
+        if (ids.isEmpty()) {
+            similarListCache.put(igdbId, List.of());
+            return List.of();
+        }
+        // 4. id들로 name + cover만 2차 조회 (limit 적용)
+        List<SimilarGameResponse> list = igdbClient.getSimilarGameBriefById(ids);
+        if (list == null) list = List.of();
+
+        // 5. 결과 캐시
+        similarListCache.put(igdbId, list);
+        return list;
+    }
+
+    private GameVideoResponse fetchVideoId(long igdbId) {
+        IgdbVideoDto dto = igdbClient.getVideoId(igdbId);
+        if (dto == null || dto.videoId() == null){
+            return GameVideoResponse.from("");
+        }
+
+        return GameVideoResponse.from(dto.videoId());
+    }
+
+
     private GameDetailResponse findDetailFromDb(long igdbId) {
         return gameRepository.findByIgdbId(igdbId)
-                .map(game -> {
-                    List<String> genres = gameGenreRepository.findGenreNamesByGameId(game.getId());
-                    List<String> platforms = gamePlatformRepository.findPlatformNamesByGameId(game.getId());
-                    return new GameDetailResponse(
-                            game.getIgdbId(),
-                            game.getName(),
-                            game.getSummary(),
-                            game.getFirstReleaseDate(),
-                            game.getCoverImageId(),
-                            genres,
-                            platforms
-                    );
-                })
+                .filter(this::isFresh) // stale이면 null 반환, API 재호출
+                .map(this::assembleDetails)
                 .orElse(null);
+    }
+
+    private GameDetailResponse assembleDetails(Game game) {
+        List<String> genres = gameGenreRepository.findGenreNamesByGameId(game.getId());
+        List<String> platforms = gamePlatformRepository.findPlatformNamesByGameId(game.getId());
+
+        return GameDetailResponse.from(
+                game.getIgdbId(),
+                game.getName(),
+                game.getSummary(),
+                game.getFirstReleaseDate(),
+                game.getCoverImageId(),
+                game.getDevelopers(),
+                game.getPublishers(),
+                genres,
+                platforms
+        );
     }
 
     private GameDetailResponse fetchPersistAndAssemble(long igdbId) {
         //igdb 호출
         IgdbGameDetailDto dto = igdbClient.getGameDetail(igdbId);
-        if (dto == null) return null;
+        if (dto == null) {
+            throw new ServiceException("404-1", "게임을 찾을 수 없습니다. " + igdbId);
+        }
 
         //game upsert
         Game game = gameRepository.findByIgdbId(igdbId)
-                .orElseGet(() -> Game.createGame(
-                        dto.id(),
-                        dto.name(),
-                        dto.summary() != null ? dto.summary() : "",
-                        dto.cover() != null ? dto.cover().imageId() : null,
-                        dto.firstReleaseDateEpochSeconds() != null ? dto.firstReleaseDateEpochSeconds() : 0L)
+                .orElseGet(() -> {
+
+                    CompanyNames companyNames = extractCompanyNames(dto.involvedCompanies());
+                    return Game.createGame(
+                            dto.id(),
+                            dto.name(),
+                            dto.summary() != null ? dto.summary() : "",
+                            companyNames.developers,
+                            companyNames.publishers,
+                            dto.cover() != null ? dto.cover().imageId() : null,
+                            dto.firstReleaseDateEpochSeconds());
+                    }
                 );
-        //TODO: null check
-        game.updateDetail(dto.name(), dto.summary(), dto.cover().imageId(), dto.firstReleaseDateEpochSeconds());
+        String coverImageId = dto.cover() == null ? null : dto.cover().imageId();
+        String summary = dto.summary() == null ? "" : dto.summary();
+        CompanyNames companyNames = extractCompanyNames(dto.involvedCompanies());
+
+        game.updateDetail(dto.name(), summary, coverImageId, dto.firstReleaseDateEpochSeconds());
+        game.updateCompanies(companyNames.developers(), companyNames.publishers());
         game = gameRepository.save(game);
 
         upsertAndLinkGenre(game, dto.genres());
         upsertAndLinkPlatform(game, dto.platforms());
 
-        GameDetailResponse assembled = findDetailFromDb(game.getIgdbId());
-        if (assembled == null) {
-            //TODO: error code 수정
-            throw new ServiceException("500-1","failed to assemble game detail for igdbId=" + igdbId);
-        }
+        GameDetailResponse assembled = assembleDetails(game);
         return assembled;
+    }
+
+    @NotNull
+    private static CompanyNames extractCompanyNames(List<IgdbInvolvedCompanyDto> companies) {
+        if (companies == null) return new CompanyNames(List.of(), List.of());
+
+        List<String> developers = new ArrayList<>();
+        List<String> publishers = new ArrayList<>();
+
+        for (IgdbInvolvedCompanyDto ic : companies) {
+            if (ic == null || ic.company() == null) continue;
+            if (ic.developer()) developers.add(ic.company().name());
+            if (ic.publisher()) publishers.add(ic.company().name());
+        }
+        return new CompanyNames(developers, publishers);
+    }
+
+    private record CompanyNames(List<String> developers, List<String> publishers) {
     }
 
     private void upsertAndLinkGenre(Game game, List<IgdbGenreDto> igdbGenres) {

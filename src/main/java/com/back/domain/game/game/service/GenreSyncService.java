@@ -14,6 +14,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class GenreSyncService {
+//    서버 켜질때 장르를 DB로 동기화
+
     private final IgdbService igdbService;
     private final GenreRepository genreRepository;
 

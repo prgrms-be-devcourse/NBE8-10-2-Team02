@@ -167,4 +167,20 @@ public class PostController {
 
         return new RsData<>("200-1", "태그가 게시글에서 제거되었습니다.");
     }
+
+    @PostMapping("{id}/like")
+    public RsData<Long> toggleLike(
+            @PathVariable int id
+    ){
+        Member actor = rq.getActor();
+
+        if(actor == null){
+            throw new ServiceException("401-1","로그인이 필요합니다.");
+        }
+
+        boolean isLiked = postService.toggleLike(actor, id);
+        String msg = isLiked ? "좋아요를 눌렀습니다." : "좋아요를 취소했습니다.";
+
+        return new RsData<>("200-1", msg, postService.getLikeCount(id));
+    }
 }
