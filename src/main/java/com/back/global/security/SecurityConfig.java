@@ -89,6 +89,7 @@ public class SecurityConfig {
                 // ======================
                 .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/posts/**").permitAll()
 
                 // ======================
                 // 리뷰 조회 (공개)
