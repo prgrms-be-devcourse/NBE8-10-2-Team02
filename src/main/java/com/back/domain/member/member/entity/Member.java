@@ -36,6 +36,12 @@ public class Member extends BaseEntity {
     @Column(unique = true, length = 30, nullable = false)
     private String nickname;
 
+    @CreatedDate
+    private LocalDateTime createDate;
+
+    @LastModifiedDate
+    private LocalDateTime modifyDate;
+
     @OneToMany(mappedBy = "member", fetch = LAZY, cascade = {PERSIST, REMOVE}, orphanRemoval = true)
     private List<MemberGame> library = new ArrayList<>();
 
