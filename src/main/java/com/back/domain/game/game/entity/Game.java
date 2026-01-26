@@ -10,6 +10,7 @@ import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -31,6 +32,16 @@ public class Game extends BaseEntity {
     @Column(nullable = false, length = 5000)
     private String summary;
 
+    @ElementCollection
+    @CollectionTable(name = "game_developer", joinColumns = @JoinColumn(name = "game_id"))
+    @Column(name = "name", nullable = false)
+    private List<String> developers = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "game_publisher", joinColumns = @JoinColumn(name = "game_id"))
+    @Column(name = "name", nullable = false)
+    private List<String> publishers = new ArrayList<>();
+
     private String coverImageId;
     private LocalDate firstReleaseDate;
     private Instant lastFetchedAt;
@@ -46,13 +57,16 @@ public class Game extends BaseEntity {
             long igdbId,
             String name,
             String summary,
+            List<String> developers,
+            List<String> publishers,
             String imageId,
-            long firstReleaseDate
+            Long firstReleaseDate
     ) {
         Game g = new Game();
         g.igdbId = igdbId;
         g.name = name;
         g.summary = summary;
+        g.updateCompanies(developers, publishers);
         g.coverImageId = imageId;
         g.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDate);
         g.lastFetchedAt = Instant.now();
@@ -77,11 +91,19 @@ public class Game extends BaseEntity {
         return g;
     }
 
-    public void updateDetail(String name, String summary, String coverImageId, long firstReleaseDateEpochSecond) {
+    public void updateDetail(String name, String summary, String coverImageId, Long firstReleaseDateEpochSecond) {
         this.name = name;
         this.summary = summary;
         this.coverImageId = coverImageId;
         this.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDateEpochSecond);
         this.lastFetchedAt = Instant.now();
+    }
+
+    public void updateCompanies(List<String> developers, List<String> publishers) {
+        this.developers.clear();
+        this.publishers.clear();
+
+        if (developers != null) this.developers.addAll(developers);
+        if (developers != null) this.publishers.addAll(publishers);
     }
 }

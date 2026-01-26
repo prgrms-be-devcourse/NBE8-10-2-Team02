@@ -1,11 +1,5 @@
 package com.back.domain.game.game.dto;
 
-import com.back.domain.game.game.entity.Game;
-import com.back.global.igdb.dto.IgdbGenreDto;
-import com.back.global.igdb.dto.IgdbKeywordDto;
-import com.back.global.igdb.dto.IgdbPlatformDto;
-import com.back.standard.util.TimeUt;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,6 +9,37 @@ public record GameDetailResponse(
         String summary,
         LocalDate firstReleaseDate,
         String coverImageId,
+        String coverUrlTemplate,
+        List<String> developers,
+        List<String> publishers,
         List<String> genres,
         List<String> platforms
-) {}
+) {
+    private static final String COVER_URL_TEMPLATE =
+            "https://images.igdb.com/igdb/image/upload/{size}/{id}.jpg";
+
+    public static GameDetailResponse from(
+            long igdbId,
+            String gameName,
+            String summary,
+            LocalDate firstReleaseDate,
+            String coverImageId,
+            List<String> developers,
+            List<String> publishers,
+            List<String> genres,
+            List<String> platforms
+    ) {
+        return new GameDetailResponse(
+                igdbId,
+                gameName,
+                summary,
+                firstReleaseDate,
+                coverImageId,
+                coverImageId == null ? null : COVER_URL_TEMPLATE,
+                developers,
+                publishers,
+                genres,
+                platforms
+        );
+    }
+}

@@ -1,6 +1,11 @@
 package com.back.domain.game.game.controller;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
+import com.back.domain.game.game.dto.GameSearchByNameResponse;
+import com.back.domain.game.game.dto.GameVideoResponse;
+import com.back.domain.game.game.dto.SimilarGameResponse;
+import com.back.domain.game.game.service.GameService;
+import com.back.global.rsData.RsData;
 import com.back.domain.game.game.dto.GameSearchCondition;
 import com.back.domain.game.game.dto.GameSearchResponse;
 import com.back.domain.game.game.dto.GenreResponse;
@@ -24,10 +29,18 @@ public class ApiV1GameController {
     private final GenreRepository genreRepository;
 
     @GetMapping("/games/{igdbId}")
-    public GameDetailResponse getGame(@PathVariable Long igdbId) {
-        GameDetailResponse game = gameService.getGameDetail(igdbId);
+    public GameDetailResponse getGameDetail(@PathVariable long igdbId) {
+        return gameService.getGameDetail(igdbId);
+    }
 
-        return game;
+    @GetMapping("/games/{igdbId}/video")
+    public GameVideoResponse getVideoId(@PathVariable long igdbId) {
+        return gameService.getVideoId(igdbId);
+    }
+
+    @GetMapping("/games/{igdbId}/similarGames")
+    public List<SimilarGameResponse> getSimilarGames(@PathVariable long igdbId) {
+        return gameService.getSimilarGames(igdbId);
     }
 
     //    슬기구현
