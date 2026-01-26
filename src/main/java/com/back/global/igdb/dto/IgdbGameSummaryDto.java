@@ -11,5 +11,6 @@ public record IgdbGameSummaryDto(
         @JsonProperty("first_release_date")
         Long firstReleaseDateEpochSeconds,
         IgdbCoverDto cover,
-        List<Long> genres
+        List<Long> genres,
+        List<Long> platforms
 ) {}

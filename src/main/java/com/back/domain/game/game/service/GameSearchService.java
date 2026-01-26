@@ -3,9 +3,7 @@ package com.back.domain.game.game.service;
 import com.back.domain.game.game.dto.GameSearchCondition;
 
 import com.back.domain.game.game.dto.GameSearchResponse;
-import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.entity.Genre;
-import com.back.domain.game.game.repository.GameSearchRepository;
 import com.back.domain.game.game.repository.GenreRepository;
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
 import com.back.global.igdb.service.IgdbService;
@@ -19,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.back.domain.game.platform.PlatformGroup.PLATFORM_MAP;
+import static com.back.global.search.SearchNormalizer.normalize;
 
 
 @Service
@@ -26,37 +25,35 @@ import static com.back.domain.game.platform.PlatformGroup.PLATFORM_MAP;
 @Transactional(readOnly = true)
 public class GameSearchService {
 
-    private final GameSearchRepository gameSearchRepository;
     private final IgdbService igdbService;
     private final GenreRepository genreRepository;
 
 
     public List<GameSearchResponse> search(GameSearchCondition condition) {
-        /* 플랫폼 코드 → IGDB 플랫폼 ID 확장 */
-        if (condition.getPlatformCode() != null) {
-            condition.setPlatformIgdbIds(
-                    PLATFORM_MAP.get(condition.getPlatformCode())
-            );
+
+        condition.setQuery(normalize(condition.getQuery()));
+
+        boolean hasPlatformFilter =
+                condition.getPlatformCode() != null &&
+                        !condition.getPlatformCode().isBlank();
+
+        if (hasPlatformFilter) {
+            String normalized = condition.getPlatformCode().trim().toUpperCase();
+            List<Long> mappedIds = PLATFORM_MAP.get(normalized);
+            condition.setPlatformIgdbIds(mappedIds);
+        } else {
+            condition.setPlatformIgdbIds(null);
         }
 
-        /* DB 검색 */
-        List<Game> games = gameSearchRepository.searchByCondition(condition);
-
-        if (!games.isEmpty()) {
-            return games.stream()
-                    .map(GameSearchResponse::fromEntity)
-                    .toList();
-        }
-
-        /* DB에 없을 때만 IGDB 검색 */
+        // 1. IGDB 검색
         List<IgdbGameSummaryDto> igdbGames = igdbService.search(condition);
 
-        /* IGDB 장르 ID 수집 */
+        // 2. 장르 매핑
         Set<Long> genreIgdbIds = igdbGames.stream()
+                .filter(g -> g.genres() != null)
                 .flatMap(g -> g.genres().stream())
                 .collect(Collectors.toSet());
 
-        /* DB 장르 매핑 */
         Map<Long, String> genreMap =
                 genreRepository.findByIgdbIdIn(genreIgdbIds).stream()
                         .collect(Collectors.toMap(
@@ -64,10 +61,24 @@ public class GameSearchService {
                                 Genre::getName
                         ));
 
-        /* IGDB → 응답 변환 */
+
+//        플랫폼 수집
+        Set<Long> platformIds = igdbGames.stream()
+                .filter(g -> g.platforms() != null)
+                .flatMap(g -> g.platforms().stream())
+                .collect(Collectors.toSet());
+
+        Map<Long, String> platformMap =
+                igdbService.getPlatformNameMap(platformIds);
+
+
+
+        // 4. DTO 변환
         return igdbGames.stream()
-                .map(d -> GameSearchResponse.fromDto(d, genreMap))
+                .map(d -> GameSearchResponse.fromDto(d, genreMap, platformMap))
                 .toList();
+
     }
+
 
 }

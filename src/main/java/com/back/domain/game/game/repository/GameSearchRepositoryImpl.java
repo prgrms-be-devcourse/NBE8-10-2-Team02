@@ -2,6 +2,8 @@ package com.back.domain.game.game.repository;
 
 import com.back.domain.game.game.entity.Game;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -25,9 +27,17 @@ public class GameSearchRepositoryImpl implements GameSearchRepositoryCustom {
         BooleanBuilder builder = new BooleanBuilder();
 
         // 1. 게임 이름 자연어 검색
+
         if (condition.getQuery() != null && !condition.getQuery().isBlank()) {
+
+            StringExpression normalizedName =
+                    Expressions.stringTemplate(
+                            "replace({0}, ' ', '')",
+                            game.name
+                    );
+
             builder.and(
-                    game.name.containsIgnoreCase(condition.getQuery())
+                    normalizedName.containsIgnoreCase(condition.getQuery())
             );
         }
 
@@ -37,19 +47,29 @@ public class GameSearchRepositoryImpl implements GameSearchRepositoryCustom {
                     gameGenre.genre.igdbId.in(condition.getGenreIds())
             );
         }
+        boolean hasPlatform =
+                condition.getPlatformIgdbIds() != null
+                        && !condition.getPlatformIgdbIds().isEmpty();
 
-        // 3. 플랫폼 필터
-        if (condition.getPlatformIgdbIds() != null) {
+        var query = queryFactory
+                .selectDistinct(game)
+                .from(game)
+                .leftJoin(game.gameGenres, gameGenre);
+
+        if (hasPlatform) {
+            // 플랫폼 필터 있을 때
+            query.join(game.gamePlatforms, gamePlatform);
             builder.and(
                     gamePlatform.platform.igdbId.in(condition.getPlatformIgdbIds())
             );
+        } else {
+            // 플랫폼 필터 없을 때
+            query.leftJoin(game.gamePlatforms, gamePlatform);
         }
 
-        return queryFactory
-                .selectDistinct(game)
-                .from(game)
-                .leftJoin(game.gameGenres, gameGenre)
-                .leftJoin(game.gamePlatforms, gamePlatform)
+
+
+        return query
                 .where(builder)
                 .fetch();
     }
