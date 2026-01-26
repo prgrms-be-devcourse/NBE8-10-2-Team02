@@ -43,6 +43,8 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         if (uri.startsWith("/v3/api-docs") || uri.startsWith("/swagger-ui")) return true;
         if (uri.startsWith("/h2-console")) return true;
 
+
+
         return false;
     }
 

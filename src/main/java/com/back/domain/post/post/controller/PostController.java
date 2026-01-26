@@ -61,9 +61,15 @@ public class PostController {
         Member author = memberService.findById(user.getId())
                 .orElseThrow(()->new ServiceException("404-1", "회원 정보를 찾을 수 없습니다."));
 
+
+
         Post post = postService.write(author, request.title(), request.content(), request.tags());
         return new RsData<>("201-1", "게시글이 작성되었습니다.", new PostDto(post));
     }
+
+
+
+
 
     @PutMapping("/{id}")
     public RsData<PostDto> modify(

@@ -83,7 +83,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/games/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/genres/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/platforms/**").permitAll()
-
+                .requestMatchers(HttpMethod.POST, "/api/v1/posts/**").permitAll()
                 // ======================
                 // 게시글/댓글 조회 (공개)
                 // ======================
