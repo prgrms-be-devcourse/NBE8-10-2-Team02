@@ -69,6 +69,13 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
+    //RestClient test용
+    testImplementation(platform("com.squareup.okhttp3:okhttp-bom:5.3.2"))
+    testImplementation("com.squareup.okhttp3:mockwebserver")
+
+    //Guava rate limiter
+    implementation("com.google.guava:guava:33.4.0-jre")
+
 }
 
 tasks.withType<Test> {

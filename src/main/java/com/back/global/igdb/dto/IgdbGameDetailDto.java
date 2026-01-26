@@ -11,8 +11,10 @@ public record IgdbGameDetailDto(
         @JsonProperty("first_release_date")
         Long firstReleaseDateEpochSeconds,
         IgdbCoverDto cover,
+        @JsonProperty("involved_companies")
+        List<IgdbInvolvedCompanyDto> involvedCompanies,
         List<IgdbGenreDto> genres,
-//        List<IgdbKeywordDto> keywords,
+//        List<IgdbKeywordDto> themes,
         List<IgdbPlatformDto> platforms
 ) {
 
