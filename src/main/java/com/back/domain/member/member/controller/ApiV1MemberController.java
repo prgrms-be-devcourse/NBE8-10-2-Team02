@@ -7,6 +7,7 @@ import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
 import com.back.domain.member.member.service.MemberService;
 import com.back.global.exception.ServiceException;
+import com.back.global.rq.Rq;
 import com.back.global.rsData.RsData;
 import com.back.global.security.SecurityUser;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class ApiV1MemberController {
 
     private final MemberRepository memberRepository;
     private final MemberService memberService;
+    private final Rq rq;
 
     @GetMapping("/check-nickname")
     @Transactional(readOnly = true)
@@ -46,12 +48,11 @@ public class ApiV1MemberController {
 
     @GetMapping("/me")
     @Transactional(readOnly = true)
-    public RsData<MemberMeResponse> me(@AuthenticationPrincipal SecurityUser user) {
-        if (user == null) {
-            throw new ServiceException("401-1", "로그인 후 이용해주세요.");
-        }
+    public RsData<MemberMeResponse> me() {
+        Member actor = rq.getActor();
+        if (actor == null) throw new ServiceException("401-1", "로그인 후 이용해주세요.");
 
-        Member member = memberRepository.findById(user.getId())
+        Member member = memberRepository.findById(actor.getId())
                 .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
 
         return new RsData<>("200-1", "내 정보 조회 성공", new MemberMeResponse(member));
@@ -60,14 +61,12 @@ public class ApiV1MemberController {
     @PutMapping("/me/password")
     @Transactional
     public RsData<Void> changePassword(
-            @AuthenticationPrincipal SecurityUser user,
             @Valid @RequestBody MemberPasswordChangeRequest req
     ) {
-        if (user == null) {
-            throw new ServiceException("401-1", "로그인 후 이용해주세요.");
-        }
+        Member actor = rq.getActor();
+        if (actor == null) throw new ServiceException("401-1", "로그인 후 이용해주세요.");
 
-        memberService.changePassword(user.getId(), req.oldPassword(), req.newPassword());
+        memberService.changePassword(actor.getId(), req.oldPassword(), req.newPassword());
 
         return new RsData<>("200-1", "비밀번호 변경 성공", null);
     }

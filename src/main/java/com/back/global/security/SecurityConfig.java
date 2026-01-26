@@ -25,7 +25,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
+                // 기본 보안 설정
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
@@ -55,28 +57,63 @@ public class SecurityConfig {
                         })
                 );
 
-        // =========================
-        // ✅ 정상 코드(최종): /api/** 는 로그인 필요
-        // =========================
-        // http.authorizeHttpRequests(auth -> auth
-        //         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        //         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-        //         .requestMatchers("/h2-console/**").permitAll()
-        //         .requestMatchers("/api/v1/auth/**").permitAll()
-        //         .requestMatchers(HttpMethod.GET, "/api/v1/members/check-nickname").permitAll()
-        //         .requestMatchers("/api/**").authenticated()
-        //         .anyRequest().permitAll()
-        // );
+        // ==========================================
+        // ✅ 정상 코드(권한 정책 적용)
+        // - 조회(GET)는 공개
+        // - 쓰기/수정/삭제(POST/PUT/DELETE)는 로그인 필요
+        // ==========================================
+        http.authorizeHttpRequests(auth -> auth
+                // preflight
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-        // =========================
-        // ⚠️ 테스트용(임시): 로그인 없이 전부 허용
-        // - 프론트/포스트맨 개발 초반 편의를 위한 설정
-        // - 테스트 종료 후 위 "정상 코드"로 되돌릴 것
-        // =========================
+                // swagger / h2
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+
+                // auth
+                .requestMatchers("/api/v1/auth/**").permitAll()
+
+                // 닉네임/이메일 중복 체크(네 코드 기준)
+                .requestMatchers(HttpMethod.GET, "/api/v1/members/check-nickname").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/check-email").permitAll()
+
+                // ======================
+                // 게임 조회/검색 (공개)
+                // ======================
+                .requestMatchers(HttpMethod.GET, "/api/v1/games/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/genres/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/platforms/**").permitAll()
+
+                // ======================
+                // 게시글/댓글 조회 (공개)
+                // ======================
+                .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments/**").permitAll()
+
+                // ======================
+                // 리뷰 조회 (공개)
+                // ======================
+                .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
+
+                // 그 외 /api/** 는 로그인 필요
+                .requestMatchers("/api/**").authenticated()
+
+                // 나머지는 열어둠(정적 리소스 등)
+                .anyRequest().permitAll()
+        );
+
+        /*
+        // ==========================================
+        // 🧪 테스트용(임시): 로그인 없이 전부 허용
+        // - 팀원들이 초반에 Postman으로 편하게 테스트할 때만 사용
+        // - 사용할 땐 위 "정상 코드" authorizeHttpRequests 블록을 주석 처리하고
+        //   이 블록을 켜서 사용
+        // ==========================================
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().permitAll()
         );
+        */
 
         return http.build();
     }
