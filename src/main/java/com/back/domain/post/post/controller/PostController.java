@@ -1,6 +1,7 @@
 package com.back.domain.post.post.controller;
 
 import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.member.service.MemberService;
 import com.back.domain.post.dto.PostCreateRequest;
 import com.back.domain.post.dto.PostDto;
 import com.back.domain.post.dto.PostModifyRequest;
@@ -10,8 +11,15 @@ import com.back.domain.tag.tag.entity.Tag;
 import com.back.domain.tag.tag.service.TagService;
 import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
+import com.back.global.security.CustomAuthenticationFilter;
+import com.back.global.security.SecurityUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,14 +30,16 @@ import java.util.List;
 public class PostController {
     private final PostService postService;
     private final TagService tagService;
+    private final MemberService memberService;
 
     @GetMapping
-    public List<PostDto> getItems(){
-        List<Post> items = postService.findAll();
+    public RsData<Page<PostDto>> getItems(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC)Pageable pageable
+            ){
+        Page<Post> items = postService.findAll(pageable);
 
-        return items.stream()
-                .map(PostDto::new)
-                .toList();
+        Page<PostDto> postDtos = items.map(PostDto::new);
+        return new RsData<>("200-1", "게시글 목록 조회", postDtos);
     }
 
     @GetMapping("/{id}")
@@ -41,37 +51,49 @@ public class PostController {
     }
 
     @PostMapping
-    public PostDto create(
+    public RsData<PostDto> create(
+            @AuthenticationPrincipal SecurityUser user,
             @RequestBody @Valid PostCreateRequest request
     ) {
-        Post post = postService.write(
-                request.title(),
-                request.content(),
-                request.tags()
-        );
+        if(user == null){
+            throw new ServiceException("401-1", "로그인이 필요합니다.");
+        }
+        Member author = memberService.findById(user.getId())
+                .orElseThrow(()->new ServiceException("404-1", "회원 정보를 찾을 수 없습니다."));
 
-        return new PostDto(post);
+        Post post = postService.write(author, request.title(), request.content(), request.tags());
+        return new RsData<>("201-1", "게시글이 작성되었습니다.", new PostDto(post));
     }
 
     @PutMapping("/{id}")
-    public PostDto modify(
+    public RsData<PostDto> modify(
             @PathVariable int id,
+            @AuthenticationPrincipal SecurityUser user,
             @RequestBody @Valid PostModifyRequest request
     ) {
         Post post = postService.findById(id)
                 .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
 
+        Member author = memberService.findById(user.getId()).get();
+
+        postService.checkPermission(post, author);
+
         postService.modify(post, request);
 
-        return new PostDto(post);
+        return new RsData<>("200-1", "%d번 게시글이 수정되었습니다.".formatted(id),new PostDto(post));
     }
 
     @DeleteMapping("/{id}")
     public RsData<Void> delete(
-            @PathVariable int id
+            @PathVariable int id,
+            @AuthenticationPrincipal SecurityUser user
     ){
         Post post = postService.findById(id)
                         .orElseThrow(()-> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
+
+        Member author = memberService.findById(user.getId()).get();
+
+        postService.checkPermission(post, author);
 
         postService.delete(post);
 
@@ -82,23 +104,26 @@ public class PostController {
     }
 
     @GetMapping("/search")
-    public List<PostDto> searchByTitle(
-            @RequestParam String keyword
+    public RsData<Page<PostDto>> searchByTitle(
+            @RequestParam String keyword,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        return postService.searchByTitle(keyword)
-                .stream()
-                .map(PostDto::new)
-                .toList();
+
+        Page<Post> page = postService.searchByTitle(keyword, pageable);
+        Page<PostDto> postDtos = page.map(PostDto :: new);
+
+        return new RsData<>("200-1", "제목 조회", postDtos);
     }
 
     @GetMapping("/tag")
-    public List<PostDto> searchByTag(
-            @RequestParam String tagName
+    public RsData<Page<PostDto>> searchByTag(
+            @RequestParam String tagName,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        return postService.searchByTagName(tagName)
-                .stream()
-                .map(PostDto::new)
-                .toList();
+        Page<PostDto> postDtos = postService.searchByTagName(tagName, pageable)
+                .map(PostDto::new);
+
+        return new RsData<>("200-1", "태그 조회", postDtos);
     }
 
     @PostMapping("/{id}/tags/{tagId}")

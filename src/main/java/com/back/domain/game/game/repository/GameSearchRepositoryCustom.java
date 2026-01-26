@@ -5,7 +5,7 @@ import com.back.domain.game.game.dto.GameSearchCondition;
 
 import java.util.List;
 
-public interface GameQueryRepositoryCustom {
+public interface GameSearchRepositoryCustom {
 
     List<Game> searchByCondition(GameSearchCondition condition);
 }

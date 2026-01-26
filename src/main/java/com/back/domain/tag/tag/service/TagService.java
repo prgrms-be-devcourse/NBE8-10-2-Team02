@@ -5,6 +5,8 @@ import com.back.domain.tag.tag.repository.TagRepository;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
+import com.back.global.igdb.dto.IgdbGameDetailDto;
+import com.back.global.igdb.dto.IgdbGenreDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

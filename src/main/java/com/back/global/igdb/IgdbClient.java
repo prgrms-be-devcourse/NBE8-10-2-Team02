@@ -2,6 +2,9 @@ package com.back.global.igdb;
 
 import com.back.domain.game.game.dto.SimilarGameResponse;
 import com.back.global.igdb.dto.*;
+import com.back.global.igdb.dto.IgdbGameDetailDto;
+import com.back.global.igdb.dto.IgdbGameSummaryDto;
+import com.back.global.igdb.dto.IgdbGenreDto;
 import com.back.global.igdb.exception.IgdbApiException;
 import com.google.common.util.concurrent.RateLimiter;
 import jakarta.annotation.PostConstruct;
@@ -195,5 +198,31 @@ public class IgdbClient {
     private String escape(String s) {
         // 검색어에 " 들어갈 수 있으니 이스케이프
         return s.replace("\"", "\\\"");
+    }
+
+    public List<IgdbGenreDto> fetchGenres() {
+        String body = """
+        fields id,name;
+        limit 100;
+        """;
+
+        try {
+            IgdbGenreDto[] res = igdbRestClient.post()
+                    .uri("/genres")
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .header("Client-ID", props.clientId())
+                    .header("Authorization", "Bearer " + tokenService.getAccessToken())
+                    .body(body)
+                    .retrieve()
+                    .body(IgdbGenreDto[].class);
+
+            return res == null ? List.of() : List.of(res);
+
+        } catch (RestClientResponseException e) {
+            throw new IgdbApiException(
+                    "IGDB fetchGenres failed: " + e.getResponseBodyAsString(),
+                    e
+            );
+        }
     }
 }

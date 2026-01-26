@@ -1,11 +1,15 @@
 package com.back.domain.game.game.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 //(gameId, platformId) 유니크 제약조건
 //db data가 stale 되었을 때 (snapshot찍은지 오래되면 stale) 갱신 로직에서 두번 들어갈 수 있다.
