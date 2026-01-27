@@ -4,17 +4,14 @@ import com.back.domain.member.member.dto.CheckNicknameResponse;
 import com.back.domain.member.member.dto.MemberMeResponse;
 import com.back.domain.member.member.dto.MemberPasswordChangeRequest;
 import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.repository.MemberRepository;
 import com.back.domain.member.member.service.MemberService;
 import com.back.global.exception.ServiceException;
 import com.back.global.rq.Rq;
 import com.back.global.rsData.RsData;
-import com.back.global.security.SecurityUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -24,8 +21,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Validated
 public class ApiV1MemberController {
-
-    private final MemberRepository memberRepository;
     private final MemberService memberService;
     private final Rq rq;
 
@@ -52,9 +47,7 @@ public class ApiV1MemberController {
         Member actor = rq.getActor();
         if (actor == null) throw new ServiceException("401-1", "로그인 후 이용해주세요.");
 
-        Member member = memberRepository.findById(actor.getId())
-                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
-
+        Member member = memberService.getMe(actor.getId());
         return new RsData<>("200-1", "내 정보 조회 성공", new MemberMeResponse(member));
     }
 

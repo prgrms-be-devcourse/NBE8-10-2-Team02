@@ -90,6 +90,12 @@ public class MemberService {
         return member;
     }
 
+    @Transactional(readOnly = true)
+    public Member getMe(int memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
+    }
+
     public void flush(){
         memberRepository.flush();
     }
