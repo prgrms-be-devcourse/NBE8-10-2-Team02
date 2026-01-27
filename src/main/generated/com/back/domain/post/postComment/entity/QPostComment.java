@@ -24,6 +24,8 @@ public class QPostComment extends EntityPathBase<PostComment> {
 
     public final com.back.global.jpa.entity.QBaseEntity _super = new com.back.global.jpa.entity.QBaseEntity(this);
 
+    public final com.back.domain.member.member.entity.QMember author;
+
     public final ListPath<PostComment, QPostComment> children = this.<PostComment, QPostComment>createList("children", PostComment.class, QPostComment.class, PathInits.DIRECT2);
 
     public final StringPath content = createString("content");
@@ -59,8 +61,9 @@ public class QPostComment extends EntityPathBase<PostComment> {
 
     public QPostComment(Class<? extends PostComment> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
+        this.author = inits.isInitialized("author") ? new com.back.domain.member.member.entity.QMember(forProperty("author")) : null;
         this.parent = inits.isInitialized("parent") ? new QPostComment(forProperty("parent"), inits.get("parent")) : null;
-        this.post = inits.isInitialized("post") ? new com.back.domain.post.post.entity.QPost(forProperty("post")) : null;
+        this.post = inits.isInitialized("post") ? new com.back.domain.post.post.entity.QPost(forProperty("post"), inits.get("post")) : null;
     }
 
 }

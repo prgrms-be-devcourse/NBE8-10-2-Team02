@@ -37,6 +37,8 @@ public class QMemberGame extends EntityPathBase<MemberGame> {
 
     public final NumberPath<Double> playtime = createNumber("playtime", Double.class);
 
+    public final com.back.domain.review.entity.QReview review;
+
     public QMemberGame(String variable) {
         this(MemberGame.class, forVariable(variable), INITS);
     }
@@ -57,6 +59,7 @@ public class QMemberGame extends EntityPathBase<MemberGame> {
         super(type, metadata, inits);
         this.game = inits.isInitialized("game") ? new com.back.domain.game.game.entity.QGame(forProperty("game")) : null;
         this.member = inits.isInitialized("member") ? new com.back.domain.member.member.entity.QMember(forProperty("member")) : null;
+        this.review = inits.isInitialized("review") ? new com.back.domain.review.entity.QReview(forProperty("review"), inits.get("review")) : null;
     }
 
 }

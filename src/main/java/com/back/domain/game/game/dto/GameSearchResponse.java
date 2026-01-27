@@ -26,6 +26,7 @@ public record GameSearchResponse(
         List<String> platforms
         // developerName 추가예정
 ) {
+//    IGDB 조회용
     public static GameSearchResponse fromDto(
             IgdbGameSummaryDto d,
             Map<Long, String> genreMap,
@@ -50,5 +51,27 @@ public record GameSearchResponse(
                         .toList()
         );
     }
+
+//    DB 조회용
+    public static GameSearchResponse from(Game game) {
+        return new GameSearchResponse(
+                game.getIgdbId(),
+                game.getName(),
+
+                IgdbImageUtil.cover(game.getCoverImageId()),
+
+                game.getFirstReleaseDate(),
+                game.getGameGenres() == null ? List.of()
+                        : game.getGameGenres().stream()
+                        .map(gg -> gg.getGenre().getName())
+                        .toList(),
+
+                game.getGamePlatforms() == null ? List.of()
+                        : game.getGamePlatforms().stream()
+                        .map(gp -> gp.getPlatform().getName())
+                        .toList()
+        );
+    }
+
 
 }
