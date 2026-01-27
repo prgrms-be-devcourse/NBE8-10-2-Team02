@@ -48,7 +48,7 @@ public class PostController {
         Page<Post> page = postService.search(kw, tag, pageable);
         Page<PostDto> postDtos = page.map(PostDto::new);
 
-        return new RsData<>("200-1", "게시글 목록 조회 (필터 적용)", postDtos);
+        return new RsData<>("200-1", "게시글 목록 조회", postDtos);
     }
 
     @GetMapping("/{id}")

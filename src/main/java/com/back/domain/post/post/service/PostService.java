@@ -55,7 +55,7 @@ public class PostService {
         post.modify(request.title(), request.content());
         post.getPostTags().clear();
 
-        postRepository.flush();
+        flush();
         if (request.tags() != null) {
             for (String tagName : request.tags()) {
                 Tag tag = tagService.getOrCreate(tagName);
