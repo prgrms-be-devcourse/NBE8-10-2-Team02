@@ -36,17 +36,17 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	runtimeOnly("com.h2database:h2")
-    developmentOnly("org.springframework.boot:spring-boot-h2console")
+	developmentOnly("org.springframework.boot:spring-boot-h2console")
 
-    compileOnly("org.projectlombok:lombok")
+	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
-	
+
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
@@ -55,10 +55,10 @@ dependencies {
 
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 
-    implementation("org.springframework.boot:spring-boot-starter-restclient")
+	implementation("org.springframework.boot:spring-boot-starter-restclient")
 
 	// 1. QueryDSL 라이브러리
 	implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
@@ -68,17 +68,17 @@ dependencies {
 	annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 	annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 
-    //caffeine
-    implementation("org.springframework.boot:spring-boot-starter-cache")
-    implementation("com.github.ben-manes.caffeine:caffeine")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+	//caffeine
+	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("com.github.ben-manes.caffeine:caffeine")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-    //RestClient test용
-    testImplementation(platform("com.squareup.okhttp3:okhttp-bom:5.3.2"))
-    testImplementation("com.squareup.okhttp3:mockwebserver")
+	//RestClient test용
+	testImplementation(platform("com.squareup.okhttp3:okhttp-bom:5.3.2"))
+	testImplementation("com.squareup.okhttp3:mockwebserver")
 
-    //Guava rate limiter
-    implementation("com.google.guava:guava:33.4.0-jre")
+	//Guava rate limiter
+	implementation("com.google.guava:guava:33.4.0-jre")
 
 }
 
@@ -94,5 +94,3 @@ sourceSets {
 		}
 	}
 }
-
-

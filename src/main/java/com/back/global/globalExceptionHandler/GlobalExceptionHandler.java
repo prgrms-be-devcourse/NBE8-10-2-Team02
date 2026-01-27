@@ -3,6 +3,8 @@ package com.back.global.globalExceptionHandler;
 import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -39,6 +41,21 @@ public class GlobalExceptionHandler {
                 .stream()
                 .sorted(Comparator.comparing(FieldError::getField))
                 .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining("\n"));
+
+        return new ResponseEntity<>(
+                new RsData<>("400-1", message),
+                BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<RsData<Void>> handle(ConstraintViolationException ex) {
+
+        String message = ex.getConstraintViolations()
+                .stream()
+                .sorted(Comparator.comparing(v -> v.getPropertyPath().toString()))
+                .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining("\n"));
 
         return new ResponseEntity<>(
