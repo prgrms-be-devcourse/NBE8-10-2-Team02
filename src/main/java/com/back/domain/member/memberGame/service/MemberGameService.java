@@ -11,6 +11,8 @@ import com.back.domain.review.entity.Review;
 import com.back.global.exception.ServiceException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,10 @@ public class MemberGameService {
     public MemberGame findByMemberAndGame(int memberId, int gameId) {
         return memberGameRepository.findByMemberIdAndGameId(memberId, gameId)
                 .orElseThrow(() -> new ServiceException("404", "MemberGame not found"));
+    }
+
+    public Page<MemberGame> findByMemberId(int memberId, Pageable pageable) {
+        return memberGameRepository.findByMemberId(memberId, pageable);
     }
     @Transactional
     public MemberGame updateMemberGame(int memberGameId, int memberId, @Valid MemberGameUpdateRequest request){

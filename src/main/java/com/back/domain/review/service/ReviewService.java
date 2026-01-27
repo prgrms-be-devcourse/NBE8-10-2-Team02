@@ -7,6 +7,8 @@ import com.back.domain.review.entity.Review;
 import com.back.domain.review.repository.ReviewRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +24,9 @@ public class ReviewService {
         return reviewRepository.findById(id);
     }
 
+    public boolean existsByMemberIdGameId(Member member, Game game) {
+        return reviewRepository.findByAuthorAndGame(member, game).isPresent();
+    }
     public Review write(String title, String content, double rating, Member member, Game game) {
         // Check if user owns the game in their library
         memberGameRepository.findByMemberIdAndGameId(member.getId(), game.getId())
@@ -41,12 +46,24 @@ public class ReviewService {
         return reviewRepository.findAll();
     }
 
+    public Page<Review> findAll(Pageable pageable) {
+        return reviewRepository.findAll(pageable);
+    }
+
     public List<Review> findByAuthorId(Long authorId) {
         return reviewRepository.findByAuthorId(authorId);
     }
 
+    public Page<Review> findByAuthorId(Long authorId, Pageable pageable) {
+        return reviewRepository.findByAuthorId(authorId, pageable);
+    }
+
     public List<Review> findByGameId(Long gameId) {
         return reviewRepository.findByGameId(gameId);
+    }
+
+    public Page<Review> findByGameId(Long gameId, Pageable pageable) {
+        return reviewRepository.findByGameId(gameId, pageable);
     }
 
     public void modify(Review review, String title, String content, double rating) {

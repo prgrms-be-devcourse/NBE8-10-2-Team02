@@ -16,10 +16,12 @@ import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reviews")
@@ -29,39 +31,42 @@ public class ApiV1ReviewController {
     private final ReviewService reviewService;
     private final MemberService memberService;
     private final GameService gameService;
-    private final Rq rq;
     private final MemberGameService memberGameService;
+    private final Rq rq;
 
     @GetMapping
     @Transactional(readOnly = true)
     @Operation(summary = "다건 조회")
-    public List<ReviewDto> getReviews() {
-        List<Review> reviews = reviewService.findAll();
-        return reviews
-                .stream()
-                .map(ReviewDto::new)
-                .toList();
+    public RsData<Page<ReviewDto>> getReviews(
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<Review> reviews = reviewService.findAll(pageable);
+        Page<ReviewDto> reviewDtos = reviews.map(ReviewDto::new);
+        return new RsData<>("200-1", "리뷰 목록 조회", reviewDtos);
     }
+
     @GetMapping("/member/{memberId}")
     @Transactional(readOnly = true)
     @Operation(summary = "한 유저의 모든 리뷰 조회")
-    public List<ReviewDto> getReviewsByMember(@PathVariable Long memberId) {
-        List<Review> reviews = reviewService.findByAuthorId(memberId);
-        return reviews
-                .stream()
-                .map(ReviewDto::new)
-                .toList();
+    public RsData<Page<ReviewDto>> getReviewsByMember(
+            @PathVariable Long memberId,
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<Review> reviews = reviewService.findByAuthorId(memberId, pageable);
+        Page<ReviewDto> reviewDtos = reviews.map(ReviewDto::new);
+        return new RsData<>("200-1", "유저별 리뷰 목록 조회", reviewDtos);
     }
 
     @GetMapping("/game/{gameId}")
     @Transactional(readOnly = true)
     @Operation(summary = "한 게임의 모든 리뷰 조회")
-    public List<ReviewDto> getReviewsByGame(@PathVariable Long gameId) {
-        List<Review> reviews = reviewService.findByGameId(gameId);
-        return reviews
-                .stream()
-                .map(ReviewDto::new)
-                .toList();
+    public RsData<Page<ReviewDto>> getReviewsByGame(
+            @PathVariable Long gameId,
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<Review> reviews = reviewService.findByGameId(gameId, pageable);
+        Page<ReviewDto> reviewDtos = reviews.map(ReviewDto::new);
+        return new RsData<>("200-1", "게임별 리뷰 목록 조회", reviewDtos);
     }
 
     @GetMapping("/{id}")
@@ -87,6 +92,16 @@ public class ApiV1ReviewController {
                 "리뷰가 작성되었습니다.",
                 new ReviewDto(review)
         );
+    }
+
+    @GetMapping("/exists/{gameId}")
+    @Transactional
+    @Operation(summary = "리뷰 작성여부 확인")
+    public boolean exists(@PathVariable int gameId ) {
+        Member actor = rq.getActor();
+        Game game = gameService.findById(gameId).orElseThrow(
+                () -> new ServiceException("404", "해당 게임이 존재하지 않습니다."));
+        return reviewService.existsByMemberIdGameId(actor,game);
     }
 
     @PutMapping("/{id}")

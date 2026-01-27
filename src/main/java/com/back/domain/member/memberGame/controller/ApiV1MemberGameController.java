@@ -16,13 +16,12 @@ import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/members/{memberId}/library")
@@ -36,8 +35,8 @@ public class ApiV1MemberGameController {
     @GetMapping
     @Transactional(readOnly = true)
     @Operation(summary = "다건 조회(회원별)")
-    public List<MemberGameDto> viewLibrary(@PathVariable("memberId") int memberId,
-                                               @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+    public RsData<Page<MemberGameDto>> viewLibrary(@PathVariable("memberId") int memberId,
+                                               @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC)
                                            Pageable pageable,
                                            @RequestParam(required = false) String status,
                                            @RequestParam(required = false) String platform
@@ -45,12 +44,9 @@ public class ApiV1MemberGameController {
         if (memberId != rq.getActor().getId()){
             throw new ServiceException("401","Cannot view this library");
         }
-        Member member = memberService.findById(memberId).get();
-        return member
-                .getLibrary()
-                .stream()
-                .map(MemberGameDto::new)
-                .toList();
+        Page<MemberGame> memberGames = memberGameService.findByMemberId(memberId, pageable);
+        Page<MemberGameDto> memberGameDtos = memberGames.map(MemberGameDto::new);
+        return new RsData<>("200-1", "라이브러리 조회", memberGameDtos);
     }
     //라이브러리에 게임추가
     @PostMapping
