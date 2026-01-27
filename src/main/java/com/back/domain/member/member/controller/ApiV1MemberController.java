@@ -3,7 +3,6 @@ package com.back.domain.member.member.controller;
 import com.back.domain.member.member.dto.CheckNicknameResponse;
 import com.back.domain.member.member.dto.MemberMeResponse;
 import com.back.domain.member.member.dto.MemberNicknameChangeRequest;
-import com.back.domain.member.member.dto.MemberNicknameChangeResponse;
 import com.back.domain.member.member.dto.MemberPasswordChangeRequest;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
