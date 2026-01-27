@@ -2,6 +2,8 @@ package com.back.domain.member.member.controller;
 
 import com.back.domain.member.member.dto.CheckNicknameResponse;
 import com.back.domain.member.member.dto.MemberMeResponse;
+import com.back.domain.member.member.dto.MemberNicknameChangeRequest;
+import com.back.domain.member.member.dto.MemberNicknameChangeResponse;
 import com.back.domain.member.member.dto.MemberPasswordChangeRequest;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
@@ -62,5 +64,15 @@ public class ApiV1MemberController {
         memberService.changePassword(actor.getId(), req.oldPassword(), req.newPassword());
 
         return new RsData<>("200-1", "비밀번호 변경 성공", null);
+    }
+
+    @PutMapping("/me/nickname")
+    @Transactional
+    public RsData<Void> changeNickname(@Valid @RequestBody MemberNicknameChangeRequest req) {
+        Member actor = rq.getActor();
+        if (actor == null) throw new ServiceException("401-1", "로그인 후 이용해주세요.");
+
+        memberService.changeNickname(actor.getId(), req.nickname());
+        return new RsData<>("200-1", "닉네임 변경 성공", null);
     }
 }
