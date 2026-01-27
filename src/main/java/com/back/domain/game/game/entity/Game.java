@@ -52,6 +52,12 @@ public class Game extends BaseEntity {
     @OneToMany(mappedBy = "game")
     private List<GamePlatform> gamePlatforms;
 
+    private Double igdbRating;
+    private Integer igdbRatingCount;
+
+    private long viewCount = 0;
+    private long likeCount = 0;
+    private long reviewCount = 0;
 
     public static Game createGame(
             long igdbId,
@@ -105,5 +111,30 @@ public class Game extends BaseEntity {
 
         if (developers != null) this.developers.addAll(developers);
         if (developers != null) this.publishers.addAll(publishers);
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) this.likeCount--;
+    }
+
+    public void incrementReviewCount() {
+        this.reviewCount++;
+    }
+
+    public void decrementReviewCount() {
+        if (this.reviewCount > 0) this.reviewCount--;
+    }
+
+    public void updateIgdbRating(Double rating, Integer ratingCount) {
+        this.igdbRating = rating;
+        this.igdbRatingCount = ratingCount;
     }
 }

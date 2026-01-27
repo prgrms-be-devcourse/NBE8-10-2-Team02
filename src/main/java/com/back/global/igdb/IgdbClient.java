@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class IgdbClient {
+    private static final String GENRES_ENDPOINT = "/game_videos";
     private static final String GAMES_ENDPOINT = "/games";
     private static final String GAME_VIDEOS_ENDPOINT = "/game_videos";
     private static final int MAX_RETRIES = 3;
@@ -140,6 +141,31 @@ public class IgdbClient {
             out.add(new SimilarGameResponse(d.id(), d.name(), coverId));
         }
         return out;
+    }
+
+    // 인기 게임 목록 조회 (IGDB rating 기준)
+    public List<IgdbPopularGameDto> getPopularGames(int limit) {
+        String body = """                                                                                        
+          fields id, name, cover.image_id, total_rating, total_rating_count;
+          where total_rating_count > 50 & cover != null & total_rating != null;
+          sort total_rating desc;
+          limit %d;
+          """.formatted(limit);
+
+        IgdbPopularGameDto[] res = postReq(body, IgdbPopularGameDto[].class, GAMES_ENDPOINT, "getPopularGames");
+        return res == null ? List.of() : List.of(res);
+    }
+
+    // 특정 게임의 rating 정보 조회
+    public IgdbPopularGameDto getGameRating(long igdbId) {
+        String body = """                                                                                        
+          fields id, name, cover.image_id, total_rating, total_rating_count;
+          where id = %d;
+          limit 1;
+          """.formatted(igdbId);
+
+        IgdbPopularGameDto[] res = postReq(body, IgdbPopularGameDto[].class, GAMES_ENDPOINT, "getGameRating");
+        return firstOrNull(res);
     }
 
     private <T> T postReq(String body, Class<T> responseType, String endPoint, String actionName) {
