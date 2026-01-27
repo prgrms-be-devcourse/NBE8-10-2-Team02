@@ -4,3 +4,15 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
+
+custom:
+  jwt:
+    secretKey: "test-secret-key-32bytes-minimum-xxxxxxxxxxxx"
+  accessToken:
+    expirationSeconds: 300
+
+igdb:
+  base-url: "https://api.igdb.com/v4"
+  client-id: "dummy"
+  client-secret: "dummy"
+  token-url: "https://id.twitch.tv/oauth2/token"
