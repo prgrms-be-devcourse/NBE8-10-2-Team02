@@ -1,5 +1,6 @@
 package com.back.global.initData;
 
+import com.back.domain.game.game.service.GameService;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
 import com.back.domain.post.post.service.PostService; // PostService 임포트 필요
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Configuration
@@ -18,6 +20,7 @@ import java.util.List;
 public class BaseInitData {
 
     private final MemberService memberService;
+    private final GameService gameService;
     private final PostService postService; // 게시글 서비스 추가
 
     @Bean
@@ -36,6 +39,20 @@ public class BaseInitData {
         tryJoin("admin@test.com", "1234", "관리자");
         tryJoin("user1@test.com", "1234", "유저1");
         tryJoin("user2@test.com", "1234", "유저2");
+        try {
+            gameService.createGame(123L,
+                    "Cat Mario",
+                    "고양이 마리오 게임",
+                    "cat_mario.png",
+                    LocalDate.now());
+            gameService.createGame(124L,
+                    "Super Mario Bros.",
+                    "최초의 마리오 게임",
+                    "super_mario_bros.png",
+                    LocalDate.of(1985, 9,13));
+        } catch (Exception ignored) {
+        }
+
     }
 
     @Transactional

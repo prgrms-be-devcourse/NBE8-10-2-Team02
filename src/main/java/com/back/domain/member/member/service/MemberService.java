@@ -4,8 +4,6 @@ import com.back.domain.member.auth.service.AuthTokenService;
 import com.back.domain.game.game.entity.Game;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
-import com.back.domain.member.memberGame.entity.MemberGame;
-import com.back.domain.member.memberGame.repository.MemberGameRepository;
 import com.back.global.exception.ServiceException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
-
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthTokenService authTokenService;
@@ -64,7 +60,6 @@ public class MemberService {
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new ServiceException("401-1", "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-
         return member;
     }
 
@@ -94,9 +89,7 @@ public class MemberService {
         member.changePassword(encoded);
         return member;
     }
-    public MemberGame addToLibrary(String platform, double playtime, boolean isFavorite,  Member member, Game game) {
-        return member.addMemberGame(platform, playtime, isFavorite, game);
-    }
+
     public void flush(){
         memberRepository.flush();
     }
