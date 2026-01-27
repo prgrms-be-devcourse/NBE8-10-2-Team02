@@ -50,8 +50,18 @@ public class PostService {
     }
 
 
+    @Transactional
     public void modify(Post post, PostModifyRequest request) {
         post.modify(request.title(), request.content());
+        post.getPostTags().clear();
+
+        postRepository.flush();
+        if (request.tags() != null) {
+            for (String tagName : request.tags()) {
+                Tag tag = tagService.getOrCreate(tagName);
+                post.addTag(tag);
+            }
+        }
     }
 
     public Optional<Post> findById(int id) {
@@ -59,17 +69,29 @@ public class PostService {
 
         if(opPost.isPresent()){
             Post post = opPost.get();
-            post.setViewCount(post.getViewCount()+1);
+            post.increaseViewCount();
         }
         return opPost;
     }
 
-    public Page<Post> searchByTitle(String keyword, Pageable pageable){
-        return postRepository.findByTitleContainingIgnoreCase(keyword, pageable);
-    }
+//    public Page<Post> searchByTitle(String keyword, Pageable pageable){
+//        return postRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+//    }
+//
+//    public Page<Post> searchByTagName(String tagName, Pageable pageable){
+//        return postRepository.findByPostTags_Tag_Content(tagName, pageable);
+//    }
 
-    public Page<Post> searchByTagName(String tagName, Pageable pageable){
-        return postRepository.findByPostTags_Tag_Content(tagName, pageable);
+    @Transactional(readOnly = true)
+    public Page<Post> search(String kw, String tag, Pageable pageable) {
+        String searchKw = (kw != null && !kw.isBlank()) ? kw : null;
+        String searchTag = (tag != null && !tag.isBlank()) ? tag : null;
+
+        if (searchKw == null && searchTag == null) {
+            return postRepository.findAll(pageable);
+        }
+
+        return postRepository.search(searchKw, searchTag, pageable);
     }
 
     public PostComment writeComment(Member author, Post post, String content, Integer parentCommentId) {
@@ -121,23 +143,23 @@ public class PostService {
         postRepository.flush();
     }
 
-    public void addTag(int id, int tagId) {
-        Post post = findById(id)
-                .orElseThrow(() -> new ServiceException("404-1", "게시글을 찾을 수 없습니다.")); //
-
-        Tag tag = tagService.findById(tagId)
-                .orElseThrow(() -> new ServiceException("404-2", "태그를 찾을 수 없습니다.")); //
-
-        post.addTag(tag);
-    }
-
-    public void deleteTag(Post post, Tag tag){
-        boolean removed = post.deleteTag(tag);
-
-        if (!removed) {
-            throw new ServiceException("400-2", "게시글에 존재하지 않는 태그입니다.");
-        }
-    }
+//    public void addTag(int id, int tagId) {
+//        Post post = findById(id)
+//                .orElseThrow(() -> new ServiceException("404-1", "게시글을 찾을 수 없습니다.")); //
+//
+//        Tag tag = tagService.findById(tagId)
+//                .orElseThrow(() -> new ServiceException("404-2", "태그를 찾을 수 없습니다.")); //
+//
+//        post.addTag(tag);
+//    }
+//
+//    public void deleteTag(Post post, Tag tag){
+//        boolean removed = post.deleteTag(tag);
+//
+//        if (!removed) {
+//            throw new ServiceException("400-2", "게시글에 존재하지 않는 태그입니다.");
+//        }
+//    }
 
     public void checkPermission(Post post, Member author){
         if(post.getAuthor().getId() != author.getId()){

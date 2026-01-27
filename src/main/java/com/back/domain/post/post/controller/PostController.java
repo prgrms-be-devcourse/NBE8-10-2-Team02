@@ -29,14 +29,26 @@ public class PostController {
     private final MemberService memberService;
     private final Rq rq;
 
+//    @GetMapping
+//    public RsData<Page<PostDto>> getItems(
+//            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+//    ) {
+//        Page<Post> items = postService.findAll(pageable);
+//        Page<PostDto> postDtos = items.map(PostDto::new);
+//
+//        return new RsData<>("200-1", "게시글 목록 조회", postDtos);
+//    }
+
     @GetMapping
     public RsData<Page<PostDto>> getItems(
+            @RequestParam(value = "kw", defaultValue = "") String kw,
+            @RequestParam(value = "tag", defaultValue = "") String tag,
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<Post> items = postService.findAll(pageable);
-        Page<PostDto> postDtos = items.map(PostDto::new);
+        Page<Post> page = postService.search(kw, tag, pageable);
+        Page<PostDto> postDtos = page.map(PostDto::new);
 
-        return new RsData<>("200-1", "게시글 목록 조회", postDtos);
+        return new RsData<>("200-1", "게시글 목록 조회 (필터 적용)", postDtos);
     }
 
     @GetMapping("/{id}")
@@ -113,60 +125,63 @@ public class PostController {
         return new RsData<>("200-1", "%d번 글이 삭제되었습니다.".formatted(id));
     }
 
-    @GetMapping("/search")
-    public RsData<Page<PostDto>> searchByTitle(
-            @RequestParam String keyword,
-            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        Page<Post> page = postService.searchByTitle(keyword, pageable);
-        Page<PostDto> postDtos = page.map(PostDto::new);
 
-        return new RsData<>("200-1", "제목 조회", postDtos);
-    }
 
-    @GetMapping("/tag")
-    public RsData<Page<PostDto>> searchByTag(
-            @RequestParam String tagName,
-            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        Page<PostDto> postDtos = postService.searchByTagName(tagName, pageable)
-                .map(PostDto::new);
 
-        return new RsData<>("200-1", "태그 조회", postDtos);
-    }
+//    @GetMapping("/search")
+//    public RsData<Page<PostDto>> searchByTitle(
+//            @RequestParam String keyword,
+//            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+//    ) {
+//        Page<Post> page = postService.searchByTitle(keyword, pageable);
+//        Page<PostDto> postDtos = page.map(PostDto::new);
+//
+//        return new RsData<>("200-1", "제목 조회", postDtos);
+//    }
+//
+//    @GetMapping("/tag")
+//    public RsData<Page<PostDto>> searchByTag(
+//            @RequestParam String tagName,
+//            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+//    ) {
+//        Page<PostDto> postDtos = postService.searchByTagName(tagName, pageable)
+//                .map(PostDto::new);
+//
+//        return new RsData<>("200-1", "태그 조회", postDtos);
+//    }
 
-    @PostMapping("/{id}/tags/{tagId}")
-    public RsData<Void> addTag(
-            @PathVariable int id,
-            @PathVariable int tagId
-    ) {
-        // 정책상 로그인 필요하게 둘 거면 여기서도 actor 체크 가능
-        // Member actor = rq.getActor();
-        // if (actor == null) throw new ServiceException("401-1", "로그인이 필요합니다.");
-
-        postService.addTag(id, tagId);
-
-        return new RsData<>("200-1", "%d번 게시글에 %d번 태그가 추가되었습니다.".formatted(id, tagId));
-    }
-
-    @DeleteMapping("/{id}/tags/{tagId}")
-    public RsData<Void> deleteTag(
-            @PathVariable int id,
-            @PathVariable int tagId
-    ) {
-        // 정책상 로그인 필요하게 둘 거면 여기서도 actor 체크 가능
-        // Member actor = rq.getActor();
-        // if (actor == null) throw new ServiceException("401-1", "로그인이 필요합니다.");
-
-        Post post = postService.findById(id)
-                .orElseThrow(() -> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
-        Tag tag = tagService.findById(tagId)
-                .orElseThrow(() -> new ServiceException("404-2", "해당 태그를 찾을 수 없습니다."));
-
-        postService.deleteTag(post, tag);
-
-        return new RsData<>("200-1", "태그가 게시글에서 제거되었습니다.");
-    }
+//    @PostMapping("/{id}/tags/{tagId}")
+//    public RsData<Void> addTag(
+//            @PathVariable int id,
+//            @PathVariable int tagId
+//    ) {
+//        // 정책상 로그인 필요하게 둘 거면 여기서도 actor 체크 가능
+//        // Member actor = rq.getActor();
+//        // if (actor == null) throw new ServiceException("401-1", "로그인이 필요합니다.");
+//
+//        postService.addTag(id, tagId);
+//
+//        return new RsData<>("200-1", "%d번 게시글에 %d번 태그가 추가되었습니다.".formatted(id, tagId));
+//    }
+//
+//    @DeleteMapping("/{id}/tags/{tagId}")
+//    public RsData<Void> deleteTag(
+//            @PathVariable int id,
+//            @PathVariable int tagId
+//    ) {
+//        // 정책상 로그인 필요하게 둘 거면 여기서도 actor 체크 가능
+//        // Member actor = rq.getActor();
+//        // if (actor == null) throw new ServiceException("401-1", "로그인이 필요합니다.");
+//
+//        Post post = postService.findById(id)
+//                .orElseThrow(() -> new ServiceException("404-1", "해당 게시글을 찾을 수 없습니다."));
+//        Tag tag = tagService.findById(tagId)
+//                .orElseThrow(() -> new ServiceException("404-2", "해당 태그를 찾을 수 없습니다."));
+//
+//        postService.deleteTag(post, tag);
+//
+//        return new RsData<>("200-1", "태그가 게시글에서 제거되었습니다.");
+//    }
 
     @PostMapping("{id}/like")
     public RsData<Long> toggleLike(

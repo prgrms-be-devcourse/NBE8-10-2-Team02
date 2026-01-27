@@ -23,7 +23,6 @@ import static jakarta.persistence.FetchType.*;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 public class Post extends BaseEntity {
     private String title;
@@ -40,7 +39,7 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post", cascade = {PERSIST, REMOVE}, orphanRemoval = true)
     private List<PostComment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post", cascade = ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();
 
     @Column(columnDefinition = "integer default 0", nullable = false)
@@ -85,13 +84,19 @@ public class Post extends BaseEntity {
     }
 
     public void addTag(Tag tag){
-        postTags.add(new PostTag(this, tag));
+        PostTag postTag = new PostTag(this, tag);
+        this.postTags.add(postTag);
+
     }
 
-    public boolean deleteTag(Tag tag){
-        return postTags.removeIf(
-                postTag ->postTag.getTag().equals(tag)
-        );
+    public void increaseViewCount() {
+        this.viewCount++;
     }
+
+//    public boolean deleteTag(Tag tag){
+//        return postTags.removeIf(
+//                postTag ->postTag.getTag().equals(tag)
+//        );
+//    }
 
 }
