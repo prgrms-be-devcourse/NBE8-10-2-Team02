@@ -13,9 +13,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,7 +31,6 @@ public class ApiV1AuthController {
     private final Rq rq;
 
     @PostMapping("/login")
-    @Transactional(readOnly = true)
     public RsData<AuthLoginResponse> login(@Valid @RequestBody AuthLoginRequest req) {
         Member member = memberService.login(req.email(), req.password());
         String accessToken = memberService.genAccessToken(member);
@@ -43,7 +46,6 @@ public class ApiV1AuthController {
     }
 
     @PostMapping("/signup")
-    @Transactional
     public RsData<AuthSignupResponse> signup(@Valid @RequestBody AuthSignupRequest req) {
         Member member = memberService.join(req.email(), req.password(), req.nickname());
         return new RsData<>("201-1", "회원가입 성공", new AuthSignupResponse(member));
@@ -57,7 +59,6 @@ public class ApiV1AuthController {
     }
 
     @GetMapping("/check-email")
-    @Transactional(readOnly = true)
     public RsData<CheckEmailResponse> checkEmail(
             @RequestParam
             @NotBlank(message = "이메일은 필수 입력값입니다.")

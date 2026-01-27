@@ -15,6 +15,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
@@ -40,6 +41,7 @@ public class MemberService {
         return memberRepository.existsByNickname(nickname);
     }
 
+    @Transactional
     public Member join(String email, String password, String nickname) {
         if (memberRepository.existsByEmail(email)) {
             throw new ServiceException("409-1", "이미 존재하는 이메일입니다.");
@@ -71,7 +73,6 @@ public class MemberService {
         return authTokenService.payload(accessToken);
     }
 
-
     @Transactional
     public Member changePassword(int memberId, String oldPassword, String newPassword) {
         Member member = memberRepository.findById(memberId)
@@ -87,10 +88,10 @@ public class MemberService {
 
         String encoded = passwordEncoder.encode(newPassword);
         member.changePassword(encoded);
+
         return member;
     }
 
-    @Transactional(readOnly = true)
     public Member getMe(int memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
@@ -116,6 +117,7 @@ public class MemberService {
         }
 
         member.changeNickname(nn);
+
         return member;
     }
 }
