@@ -25,17 +25,11 @@ public class Review extends BaseEntity {
     @LastModifiedDate
     private LocalDateTime modifyDate;
 
-    //@JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     private Game game;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Member author;
-//    @Column(updatable = false)
-//    private String gameName;
-//    @Column(updatable = false)
-//    private int gameId;
-
 
     public Review(String title, String content, double rating, Member author, Game game) {
         this.title = title;
@@ -43,19 +37,12 @@ public class Review extends BaseEntity {
         this.rating = rating;
         this.author = author;
         this.game = game;
-
-//        this.gameName = gameName; Column 옮겨오는 것 고려해보기
-//        this.gameId = gameId;
     }
 
-    public void modify(String title, String content,double rating) {
+    public void modify(String title, String content, double rating) {
         this.title = title;
         this.content = content;
         this.rating = rating;
-    }
-
-    public void checkActorCanWrite(Member actor) {
-        //TODO 중복리뷰가 있나 확인하고 있으면 예외 던지기
     }
 
     public void checkActorCanModify(Member actor) {
