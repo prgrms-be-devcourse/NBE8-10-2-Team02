@@ -3,7 +3,10 @@ package com.back.domain.game.game.service;
 import com.back.domain.game.game.dto.GameSearchCondition;
 
 import com.back.domain.game.game.dto.GameSearchResponse;
+import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.entity.Genre;
+import com.back.domain.game.game.repository.GameRepository;
+import com.back.domain.game.game.repository.GameSearchRepository;
 import com.back.domain.game.game.repository.GenreRepository;
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
 import com.back.global.igdb.service.IgdbService;
@@ -27,6 +30,7 @@ public class GameSearchService {
 
     private final IgdbService igdbService;
     private final GenreRepository genreRepository;
+    private final GameSearchRepository gameSearchRepository;
 
 
     public List<GameSearchResponse> search(GameSearchCondition condition) {
@@ -46,6 +50,16 @@ public class GameSearchService {
         }
 
         // 1. IGDB 검색
+        List<Game> games =
+                gameSearchRepository.searchByCondition(condition);
+
+        if (!games.isEmpty()) {
+            return games.stream()
+                    .map(GameSearchResponse::from)
+                    .toList();
+        }
+
+//        DB에 없으면 IGDB 검색
         List<IgdbGameSummaryDto> igdbGames = igdbService.search(condition);
 
         // 2. 장르 매핑

@@ -46,11 +46,11 @@ public class Game extends BaseEntity {
     private LocalDate firstReleaseDate;
     private Instant lastFetchedAt;
 
-    @OneToMany(mappedBy = "game")
-    private List<GameGenre> gameGenres;
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GameGenre> gameGenres = new ArrayList<>();
 
-    @OneToMany(mappedBy = "game")
-    private List<GamePlatform> gamePlatforms;
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GamePlatform> gamePlatforms = new ArrayList<>();
 
 
     public static Game createGame(
@@ -106,4 +106,19 @@ public class Game extends BaseEntity {
         if (developers != null) this.developers.addAll(developers);
         if (developers != null) this.publishers.addAll(publishers);
     }
+
+
+    public void addPlatform(Platform platform) {
+        GamePlatform gp = GamePlatform.createGamePlatform(this, platform);
+        this.gamePlatforms.add(gp);
+    }
+
+    public void addGenre(Genre genre) {
+        GameGenre gg = GameGenre.createGameGenre(this, genre);
+        this.gameGenres.add(gg);
+    }
+
+
+
+
 }
