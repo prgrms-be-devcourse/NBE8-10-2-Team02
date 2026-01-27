@@ -24,6 +24,8 @@ public class QGame extends EntityPathBase<Game> {
 
     public final StringPath coverImageId = createString("coverImageId");
 
+    public final ListPath<String, StringPath> developers = this.<String, StringPath>createList("developers", String.class, StringPath.class, PathInits.DIRECT2);
+
     public final DatePath<java.time.LocalDate> firstReleaseDate = createDate("firstReleaseDate", java.time.LocalDate.class);
 
     public final ListPath<GameGenre, QGameGenre> gameGenres = this.<GameGenre, QGameGenre>createList("gameGenres", GameGenre.class, QGameGenre.class, PathInits.DIRECT2);
@@ -38,6 +40,8 @@ public class QGame extends EntityPathBase<Game> {
     public final DateTimePath<java.time.Instant> lastFetchedAt = createDateTime("lastFetchedAt", java.time.Instant.class);
 
     public final StringPath name = createString("name");
+
+    public final ListPath<String, StringPath> publishers = this.<String, StringPath>createList("publishers", String.class, StringPath.class, PathInits.DIRECT2);
 
     public final StringPath summary = createString("summary");
 
