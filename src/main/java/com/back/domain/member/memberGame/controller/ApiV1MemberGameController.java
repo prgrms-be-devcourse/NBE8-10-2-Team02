@@ -4,17 +4,24 @@ import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.service.GameService;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
+import com.back.domain.member.memberGame.dto.MemberGameUpdateRequest;
 import com.back.domain.member.memberGame.dto.MemberGameAddRequest;
 import com.back.domain.member.memberGame.dto.MemberGameDto;
 import com.back.domain.member.memberGame.entity.MemberGame;
 
+import com.back.domain.member.memberGame.service.MemberGameService;
+import com.back.global.exception.ServiceException;
+import com.back.global.rq.Rq;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -23,38 +30,39 @@ import java.util.List;
 public class ApiV1MemberGameController {
     private final GameService gameService;
     private final MemberService memberService;
+    private final MemberGameService memberGameService;
+    private final Rq rq;
 
-    //TODO Library 조회
     @GetMapping
     @Transactional(readOnly = true)
     @Operation(summary = "다건 조회(회원별)")
-    public List<MemberGame> viewLibrary(@PathVariable("memberId") int memberId){
-        //T회원 확인하는 코드 넣기
-        List<MemberGame> memberGames = new ArrayList<>();
-        return memberGames;
+    public List<MemberGameDto> viewLibrary(@PathVariable("memberId") int memberId,
+                                               @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+                                           Pageable pageable,
+                                           @RequestParam(required = false) String status,
+                                           @RequestParam(required = false) String platform
+    ) {
+        if (memberId != rq.getActor().getId()){
+            throw new ServiceException("401","Cannot view this library");
+        }
+        Member member = memberService.findById(memberId).get();
+        return member
+                .getLibrary()
+                .stream()
+                .map(MemberGameDto::new)
+                .toList();
     }
-
-    //TODO memberGameDetail (+GameDetailDto) (리뷰작성여부)까지 보여주는 API
-    @GetMapping("/{id}")
-    @Transactional(readOnly = true)
-    @Operation(summary = "단건 조회")
-    public MemberGame viewMemberGame(@PathVariable("memberId") int memberId, @PathVariable("id") Long id){
-        //회원 확인하는 코드 넣기
-        MemberGame memberGame = new MemberGame();
-        return memberGame;//memberGameDto로 변경하기
-    }
-
     //라이브러리에 게임추가
     @PostMapping
     @Transactional
     @Operation(summary = "라이브러리에 멤버게임 추가")
-    public RsData addMemberGame(@PathVariable("memberId") int memberId, @RequestBody MemberGameAddRequest request){
-        //Member actor = rq.getActor();
-        Member actor = memberService.findByEmail("john@gmail.com").get();
-        //check if memberId  == actor.getId()
-        Game game = gameService.findById(request.gameId()).orElseThrow();
-        //체크 더 넣기 (플랫폼도 똑같은 중복게임인지 체크 등)
-        MemberGame memberGame = memberService.addToLibrary(request.platform(),request.playtime(),request.isFavorite(),actor, game);
+    public RsData addToLibrary(@PathVariable("memberId") int memberId, @RequestBody MemberGameAddRequest request){
+        if (memberId != rq.getActor().getId()){
+            throw new ServiceException("401","Cannot add to this library");
+        }
+        Member actor = memberService.findById(rq.getActor().getId()).orElseThrow();
+        Game game = gameService.findById(request.gameId()).orElseThrow(() -> new ServiceException("404-1", "No Game"));
+        MemberGame memberGame = memberGameService.addToLibrary(request.platform(), request.playtime(), request.isFavorite(), request.status(), actor, game);
         memberService.flush();
         return new RsData<>(
                 "201-1",
@@ -62,7 +70,48 @@ public class ApiV1MemberGameController {
                 new MemberGameDto(memberGame)
         );
     }
-    //라이브러리에서 게임삭제
+
 
     //게임정보 업데이트하기 (favorite, review, playtime 등)
+    @PatchMapping("/{memberGameId}")
+    @Transactional
+    @Operation(summary = "라이브러리 게임 상태 업데이트")
+    public RsData updateMemberGame(
+            @PathVariable("memberId") int memberId,
+            @PathVariable("memberGameId") int memberGameId,
+            @Valid @RequestBody MemberGameUpdateRequest request
+    ) {
+        if (memberId != rq.getActor().getId()){
+            throw new ServiceException("401","Cannot update this library");
+        }
+        MemberGame memberGame = memberGameService.updateMemberGame(
+                memberGameId,
+                memberId,
+                request
+        );
+
+        return new RsData<>(
+                "200",
+                "게임 정보가 업데이트되었습니다.",
+                new MemberGameDto(memberGame)
+        );
+    }
+
+
+    @DeleteMapping("/{memberGameId}")
+    @Transactional
+    @Operation(summary = "라이브러리에서 게임삭제")
+    public RsData<Void> removeFromLibrary(@PathVariable("memberId") int memberId, @PathVariable("memberGameId") int memberGameId){
+        Member actor = rq.getActor();
+        if (memberId != actor.getId()){
+            throw new ServiceException("401","Cannot delete from this library");
+        }
+        Member member = memberService.findById(actor.getId()).orElseThrow();
+        memberGameService.removeFromLibrary(member, memberGameId);
+        memberService.flush();
+        return new RsData<>(
+                "204",
+                "게임을 삭제하였습니다."
+        );
+    }
 }
