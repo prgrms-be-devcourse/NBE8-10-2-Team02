@@ -69,6 +69,9 @@ public class Member extends BaseEntity {
         return memberGame;
     }
 
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
 
     public Optional<MemberGame> getMemberGameById(int memberGameId) {//make it so that it returns detailDto
                 return library

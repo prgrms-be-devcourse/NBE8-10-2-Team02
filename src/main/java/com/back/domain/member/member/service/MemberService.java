@@ -9,7 +9,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -71,8 +70,6 @@ public class MemberService {
         return authTokenService.payload(accessToken);
     }
 
-
-    @Transactional
     public Member changePassword(int memberId, String oldPassword, String newPassword) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
@@ -90,7 +87,30 @@ public class MemberService {
         return member;
     }
 
+    public Member getMe(int memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
+    }
+
     public void flush(){
         memberRepository.flush();
+    }
+
+    public Member changeNickname(int memberId, String newNickname) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
+
+        String nn = newNickname.trim();
+
+        if (member.getNickname().equals(nn)) {
+            throw new ServiceException("400-1", "현재 닉네임과 동일합니다.");
+        }
+
+        if (memberRepository.existsByNicknameAndIdNot(nn, memberId)) {
+            throw new ServiceException("409-1", "이미 사용 중인 닉네임입니다.");
+        }
+
+        member.changeNickname(nn);
+        return member;
     }
 }
