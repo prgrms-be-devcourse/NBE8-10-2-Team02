@@ -45,6 +45,18 @@ public class MemberGameService {
     public Page<MemberGame> findByMemberId(int memberId, Pageable pageable) {
         return memberGameRepository.findByMemberId(memberId, pageable);
     }
+
+    public Page<MemberGame> findByMemberIdWithFilters(int memberId, StatusEnum status, String platform, Pageable pageable) {
+        if (status != null && platform != null) {
+            return memberGameRepository.findByMemberIdAndStatusAndPlatform(memberId, status, platform, pageable);
+        } else if (status != null) {
+            return memberGameRepository.findByMemberIdAndStatus(memberId, status, pageable);
+        } else if (platform != null) {
+            return memberGameRepository.findByMemberIdAndPlatform(memberId, platform, pageable);
+        } else {
+            return memberGameRepository.findByMemberId(memberId, pageable);
+        }
+    }
     @Transactional
     public MemberGame updateMemberGame(int memberGameId, int memberId, @Valid MemberGameUpdateRequest request){
         MemberGame memberGame = memberGameRepository.findById(memberGameId)

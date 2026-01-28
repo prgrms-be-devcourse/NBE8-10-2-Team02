@@ -4,6 +4,7 @@ import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.service.GameService;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
+import com.back.domain.member.memberGame.StatusEnum;
 import com.back.domain.member.memberGame.dto.MemberGameUpdateRequest;
 import com.back.domain.member.memberGame.dto.MemberGameAddRequest;
 import com.back.domain.member.memberGame.dto.MemberGameDto;
@@ -44,7 +45,18 @@ public class ApiV1MemberGameController {
         if (memberId != rq.getActor().getId()){
             throw new ServiceException("401","Cannot view this library");
         }
-        Page<MemberGame> memberGames = memberGameService.findByMemberId(memberId, pageable);
+
+        // Parse status string to enum if provided
+        StatusEnum statusEnum = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                statusEnum = StatusEnum.valueOf(status);
+            } catch (IllegalArgumentException e) {
+                // Invalid status value, ignore filter
+            }
+        }
+
+        Page<MemberGame> memberGames = memberGameService.findByMemberIdWithFilters(memberId, statusEnum, platform, pageable);
         Page<MemberGameDto> memberGameDtos = memberGames.map(MemberGameDto::new);
         return new RsData<>("200-1", "라이브러리 조회", memberGameDtos);
     }
