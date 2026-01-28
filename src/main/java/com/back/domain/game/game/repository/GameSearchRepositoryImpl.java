@@ -15,9 +15,11 @@ import static com.back.domain.game.game.entity.QGame.game;
 import static com.back.domain.game.game.entity.QGameGenre.gameGenre;
 import static com.back.domain.game.game.entity.QGamePlatform.gamePlatform;
 
+
 @Repository
 @RequiredArgsConstructor
 public class GameSearchRepositoryImpl implements GameSearchRepositoryCustom {
+//    추후 DB검색 확장용
 
     private final JPAQueryFactory queryFactory;
 

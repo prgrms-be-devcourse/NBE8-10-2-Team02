@@ -37,9 +37,13 @@ public class QPost extends EntityPathBase<Post> {
 
     public final DateTimePath<java.time.LocalDateTime> modifyDate = createDateTime("modifyDate", java.time.LocalDateTime.class);
 
+    public final ListPath<PostLike, QPostLike> postLikes = this.<PostLike, QPostLike>createList("postLikes", PostLike.class, QPostLike.class, PathInits.DIRECT2);
+
     public final ListPath<com.back.domain.tag.postTag.entity.PostTag, com.back.domain.tag.postTag.entity.QPostTag> postTags = this.<com.back.domain.tag.postTag.entity.PostTag, com.back.domain.tag.postTag.entity.QPostTag>createList("postTags", com.back.domain.tag.postTag.entity.PostTag.class, com.back.domain.tag.postTag.entity.QPostTag.class, PathInits.DIRECT2);
 
     public final StringPath title = createString("title");
+
+    public final NumberPath<Integer> viewCount = createNumber("viewCount", Integer.class);
 
     public QPost(String variable) {
         this(Post.class, forVariable(variable), INITS);

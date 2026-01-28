@@ -49,17 +49,18 @@ public class GameSearchService {
             condition.setPlatformIgdbIds(null);
         }
 
-        // 1. IGDB 검색
-        List<Game> games =
-                gameSearchRepository.searchByCondition(condition);
 
-        if (!games.isEmpty()) {
-            return games.stream()
-                    .map(GameSearchResponse::from)
-                    .toList();
-        }
+//       DB검색 로직 (추후 확장예정)
+//        List<Game> games =
+//                gameSearchRepository.searchByCondition(condition);
+//
+//        if (!games.isEmpty()) {
+//            return games.stream()
+//                    .map(GameSearchResponse::from)
+//                    .toList();
+//        }
 
-//        DB에 없으면 IGDB 검색
+//        IGDB 검색
         List<IgdbGameSummaryDto> igdbGames = igdbService.search(condition);
 
         // 2. 장르 매핑
