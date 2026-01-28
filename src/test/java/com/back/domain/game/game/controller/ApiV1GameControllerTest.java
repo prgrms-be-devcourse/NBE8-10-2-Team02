@@ -3,22 +3,31 @@ package com.back.domain.game.game.controller;
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
+import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.service.GameService;
 import com.back.global.exception.ServiceException;
+import com.back.global.igdb.IgdbClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ApiV1GameController.class)
+@ActiveProfiles("test")
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
 public class ApiV1GameControllerTest {
 
     @Autowired
@@ -26,20 +35,26 @@ public class ApiV1GameControllerTest {
 
     @MockitoBean
     GameService gameService;
+    @MockitoBean
+    IgdbClient igdbClient;
 
     @Test
     @DisplayName("게임상세조회 - 성공")
     void t1_getGameDetail_success() throws Exception {
         long igdbId = 10L;
+        Game game = Game.createGame(igdbId, "Zelda", "summary",
+                List.of("Nintendo"), List.of("Nintendo"), "co", null);
+
+        Field idField = Game.class.getSuperclass().getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(game, 1);
+
         when(gameService.getGameDetail(igdbId))
-                .thenReturn(GameDetailResponse.from(
-                        igdbId, "Zelda", "summary", null, "co",
-                        List.of("Nintendo"), List.of("Nintendo"),
-                        List.of("Action"), List.of("Switch")
-                ));
+                .thenReturn(GameDetailResponse.from(game, List.of("Action"), List.of("Switch")));
 
         mockMvc.perform(get("/api/v1/games/{igdbId}", igdbId))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gameId").value(1))
                 .andExpect(jsonPath("$.igdbId").value(10))
                 .andExpect(jsonPath("$.gameName").value("Zelda"))
                 .andExpect(jsonPath("$.coverImageId").value("co"))
