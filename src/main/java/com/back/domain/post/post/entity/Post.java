@@ -26,6 +26,7 @@ import static jakarta.persistence.FetchType.*;
 @NoArgsConstructor
 public class Post extends BaseEntity {
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String content;
     @CreatedDate
     @Column(updatable = false)
