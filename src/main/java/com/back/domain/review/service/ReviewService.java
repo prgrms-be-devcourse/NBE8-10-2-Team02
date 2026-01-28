@@ -24,9 +24,10 @@ public class ReviewService {
         return reviewRepository.findById(id);
     }
 
-    public boolean existsByMemberIdGameId(Member member, Game game) {
-        return reviewRepository.findByAuthorAndGame(member, game).isPresent();
+    public Optional<Review> findByAuthorAndGame(Member member, Game game) {
+        return reviewRepository.findByAuthorAndGame(member, game);
     }
+
     public Review write(String title, String content, double rating, Member member, Game game) {
         // Check if user owns the game in their library
         memberGameRepository.findByMemberIdAndGameId(member.getId(), game.getId())

@@ -94,14 +94,23 @@ public class ApiV1ReviewController {
         );
     }
 
-    @GetMapping("/exists/{gameId}")
-    @Transactional
-    @Operation(summary = "리뷰 작성여부 확인")
-    public boolean exists(@PathVariable int gameId ) {
+    @GetMapping("/my/game/{gameId}")
+    @Transactional(readOnly = true)
+    @Operation(summary = "내 리뷰 조회 (게임별)")
+    public RsData<ReviewDto> getMyGameReview(@PathVariable int gameId) {
         Member actor = rq.getActor();
-        Game game = gameService.findById(gameId).orElseThrow(
-                () -> new ServiceException("404", "해당 게임이 존재하지 않습니다."));
-        return reviewService.existsByMemberIdGameId(actor,game);
+
+        Game game = gameService.findById(gameId)
+                .orElseThrow(() -> new ServiceException("404-1", "해당 게임이 존재하지 않습니다."));
+
+        Review review = reviewService.findByAuthorAndGame(actor, game)
+                .orElseThrow(() -> new ServiceException("404-2", "작성한 리뷰가 없습니다."));
+
+        return new RsData<>(
+                "200-1",
+                "내 리뷰 조회",
+                new ReviewDto(review)
+        );
     }
 
     @PutMapping("/{id}")
