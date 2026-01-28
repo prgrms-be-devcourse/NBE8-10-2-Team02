@@ -143,17 +143,47 @@ public class IgdbClient {
         return out;
     }
 
-    // 인기 게임 목록 조회 (IGDB rating 기준)
-    public List<IgdbPopularGameDto> getPopularGames(int limit) {
-        String body = """                                                                                        
-          fields id, name, cover.image_id, total_rating, total_rating_count;
-          where total_rating_count > 50 & cover != null & total_rating != null;
-          sort total_rating desc;
-          limit %d;
+    // 인기 게임 목록 조회 (Popularity Primitives API)
+    public List<IgdbPopularityPrimitiveDto> getPopularGameIds(int limit) {
+        String body = """
+            fields game_id,value,popularity_type;
+            where popularity_type = 1;
+            sort value desc;
+            limit %d;
           """.formatted(limit);
 
-        IgdbPopularGameDto[] res = postReq(body, IgdbPopularGameDto[].class, GAMES_ENDPOINT, "getPopularGames");
+        IgdbPopularityPrimitiveDto[] res = postReq(body, IgdbPopularityPrimitiveDto[].class,
+                "/popularity_primitives", "getPopularGameIds");
         return res == null ? List.of() : List.of(res);
+    }
+
+    // 인기 게임 ID들로 게임 정보 조회 (name, cover)
+    public List<IgdbPopularGameDto> getGamesByIds(List<Long> gameIds) {
+        if (gameIds == null || gameIds.isEmpty()) return List.of();
+
+        String in = gameIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String body = """
+          fields id, name, cover.image_id, total_rating, total_rating_count;
+          where id = (%s);
+          limit %d;
+          """.formatted(in, gameIds.size());
+
+        IgdbPopularGameDto[] res = postReq(body, IgdbPopularGameDto[].class, GAMES_ENDPOINT, "getGamesByIds");
+        return res == null ? List.of() : List.of(res);
+    }
+
+    public List<GameRow> fetchGamesByIds(List<Long> idsInOrder) {
+        String idList = idsInOrder.stream().map(String::valueOf).collect(Collectors.joining(","));
+
+        String body = """
+                fields id,name,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,first_release_date;
+                where id = (%s);
+                limit %d;
+                """.formatted(idList, idsInOrder.size());
+
+        GameRow[] games = postReq(body, GameRow[].class, GAMES_ENDPOINT, "fetchGamesByIds");
+
+        return games == null ? List.of() : List.of(games);
     }
 
     // 특정 게임의 rating 정보 조회

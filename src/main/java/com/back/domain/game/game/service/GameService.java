@@ -8,6 +8,7 @@ import com.back.domain.game.game.repository.*;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.*;
+import com.back.global.igdb.service.IgdbPopularRightNowService;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -38,12 +39,14 @@ public class GameService {
     private final GameGenreRepository gameGenreRepository;
     private final GamePlatformRepository gamePlatformRepository;
     private final IgdbClient igdbClient;
+    private final IgdbPopularRightNowService igdbPopularRightNowService;
 
     private final Cache<Long, GameDetailResponse> gameDetailCache;
     private final Cache<Long, GameVideoResponse> videoIdCache;
     private final Cache<Long, List<Long>> similarIdsCache;
     private final Cache<Long, List<SimilarGameResponse>> similarListCache;
     private final Cache<String, List<PopularGameResponse>> popularGamesCache;
+    private final Cache<String, List<PopularGameCardDto>> igdbPopularGamesCache;
     private final Cache<Long, AtomicLong> viewCountCache;
 
     private static final Duration DB_STALE_AFTER = Duration.ofDays(7);
@@ -74,6 +77,22 @@ public class GameService {
         return result;
     }
 
+    /**
+     * IGDB "Popular Right Now" 인기 게임 조회
+     * - Visits, Want to Play, Twitch 시청 데이터 가중치 조합
+     * - 캐시 사용 (30분)
+     */
+    public List<PopularGameCardDto> getIgdbPopularGames(int limit) {
+        String cacheKey = "igdb_popular_" + limit;
+        List<PopularGameCardDto> cached = igdbPopularGamesCache.getIfPresent(cacheKey);
+        if (cached != null) return cached;
+
+        List<PopularGameCardDto> result = igdbPopularRightNowService.popularRightNow(limit);
+
+        igdbPopularGamesCache.put(cacheKey, result);
+        return result;
+    }
+
     @Transactional
     public List<PopularGameResponse> getPopularGamesHybrid(int limit) {
         // 1. 캐시 확인
@@ -81,16 +100,43 @@ public class GameService {
         List<PopularGameResponse> cached = popularGamesCache.getIfPresent(cacheKey);
         if (cached != null) return cached;
 
-        // 2. IGDB에서 인기 게임 조회
-        List<IgdbPopularGameDto> igdbGames = igdbClient.getPopularGames(limit);
+        // 2. popularity_primitives에서 인기 game_id + value 조회
+        List<IgdbPopularityPrimitiveDto> primitives = igdbClient.getPopularGameIds(limit);
+        if (primitives.isEmpty()) return List.of();
 
-        // 3. DB에 있는 게임은 자체 데이터 포함해서 반영함
-        List<PopularGameResponse> result = igdbGames.stream()
-                .map(dto -> {
-                    return gameRepository.findByIgdbId(dto.id())
-                            .map(PopularGameResponse::fromGame)
-                            .orElseGet(() -> PopularGameResponse.fromIgdb(dto));
+        // 3. value 정규화 (최대값을 100으로)
+        double maxValue = primitives.stream()
+                .mapToDouble(IgdbPopularityPrimitiveDto::value)
+                .max().orElse(1.0);
+
+        Map<Long, Double> normalizedScores = primitives.stream()
+                .collect(Collectors.toMap(
+                        IgdbPopularityPrimitiveDto::gameId,
+                        p -> (p.value() / maxValue) * 100.0,
+                        (a, b) -> Math.max(a, b) // 같은 gameId가 여러 타입으로 올 수 있음
+                ));
+
+        // 4. game_id들로 IGDB에서 게임 정보(name, cover) 조회
+        List<Long> gameIds = new ArrayList<>(normalizedScores.keySet());
+        List<IgdbPopularGameDto> igdbGames = igdbClient.getGamesByIds(gameIds);
+
+        Map<Long, IgdbPopularGameDto> igdbGameMap = igdbGames.stream()
+                .collect(Collectors.toMap(IgdbPopularGameDto::id, Function.identity()));
+
+        // 5. DB에 있는 게임은 자체 데이터 포함해서 반영
+        List<PopularGameResponse> result = primitives.stream()
+                .map(p -> {
+                    long gameId = p.gameId();
+                    double normalizedScore = normalizedScores.getOrDefault(gameId, 0.0);
+                    IgdbPopularGameDto igdbDto = igdbGameMap.get(gameId);
+
+                    if (igdbDto == null) return null; // 게임 정보를 못 가져온 경우
+
+                    return gameRepository.findByIgdbId(gameId)
+                            .map(game -> PopularGameResponse.fromGame(game, normalizedScore))
+                            .orElseGet(() -> PopularGameResponse.fromIgdb(igdbDto, normalizedScore));
                 })
+                .filter(Objects::nonNull)
                 .sorted((a, b) -> Double.compare(b.popularityScore(), a.popularityScore()))
                 .toList();
 

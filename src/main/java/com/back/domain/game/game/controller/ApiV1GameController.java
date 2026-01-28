@@ -2,13 +2,10 @@ package com.back.domain.game.game.controller;
 
 import com.back.domain.game.game.dto.*;
 import com.back.domain.game.game.service.GameService;
-import com.back.global.rsData.RsData;
-import com.back.domain.game.game.repository.GenreRepository;
 import com.back.domain.game.game.service.GameSearchService;
-import com.back.domain.game.game.service.GameService;
-
 import com.back.domain.game.game.service.GenreService;
 import com.back.domain.game.platform.PlatformGroup;
+import com.back.global.igdb.dto.PopularGameCardDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -43,17 +40,25 @@ public class ApiV1GameController {
         return gameService.getSimilarGames(igdbId);
     }
 
-    @GetMapping("/games/popular")
-    @Operation(summary = "인기 게임 조회", description = "IGDB + 자체 서비스 데이터 기반 인기 순위")
+    /*@GetMapping("/games/popular")
+    @Operation(summary = "인기 게임 조회 (자체 서비스)", description = "DB 또는 IGDB+DB 하이브리드 인기 순위")
     public List<PopularGameResponse> getPopularGames(
             @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "hybrid") String source  // "db", "igdb", "hybrid"
+            @RequestParam(defaultValue = "hybrid") String source  // "db", "hybrid"
     ) {
         return switch (source) {
             case "db" -> gameService.getPopularGames(limit);
             case "hybrid" -> gameService.getPopularGamesHybrid(limit);
             default -> gameService.getPopularGamesHybrid(limit);
         };
+    }*/
+
+    @GetMapping("/games/popular/igdb")
+    @Operation(summary = "IGDB 인기 게임 조회", description = "IGDB Popular Right Now (Visits + Want + Twitch 가중치 조합)")
+    public List<PopularGameCardDto> getIgdbPopularGames(
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        return gameService.getIgdbPopularGames(limit);
     }
 
     //    슬기구현

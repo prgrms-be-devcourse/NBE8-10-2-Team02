@@ -4,19 +4,22 @@ import com.back.domain.game.game.entity.Game;
 import com.back.global.igdb.dto.IgdbPopularGameDto;
 
 public record PopularGameResponse(
-          long igdbId,                                                                                         
-          String name,                                                                                         
-          String coverImageId,                                                                                 
-          Double igdbRating,                                                                                   
-          Integer igdbRatingCount,                                                                             
-          long viewCount,                                                                                      
-          long likeCount,                                                                                      
-          long reviewCount,                                                                                    
-          double popularityScore                                                                               
-  ) {
-    public static PopularGameResponse fromIgdb(IgdbPopularGameDto dto) {
+        long igdbId,
+        String name,
+        String coverImageId,
+        Double igdbRating,
+        Integer igdbRatingCount,
+        long viewCount,
+        long likeCount,
+        long reviewCount,
+        double popularityScore
+) {
+    /**
+     * IGDB 데이터만으로 생성 (DB에 없는 게임)
+     * igdbPopularityValue: popularity_primitives에서 받은 정규화된 값 (0~100)
+     */
+    public static PopularGameResponse fromIgdb(IgdbPopularGameDto dto, double normalizedIgdbScore) {
         String coverId = dto.cover() != null ? dto.cover().imageId() : null;
-        double score = dto.totalRating() != null ? dto.totalRating() : 0.0;
 
         return new PopularGameResponse(
                 dto.id(),
@@ -24,13 +27,18 @@ public record PopularGameResponse(
                 coverId,
                 dto.totalRating(),
                 dto.totalRatingCount(),
-                0, 0, 0,  // 자체 데이터 없음
-                score
+                0, 0, 0,
+                normalizedIgdbScore
         );
     }
 
-    public static PopularGameResponse fromGame(Game game) {
-        double score = calculateScore(game);
+    /**
+     * DB 게임 + IGDB 인기도 정규화 값으로 생성
+     */
+    public static PopularGameResponse fromGame(Game game, double normalizedIgdbScore) {
+        double serviceBonus = calculateServiceBonus(game);
+        // IGDB 인기도(0~100) 80% + 자체 서비스 보너스(0~20) 20%
+        double score = normalizedIgdbScore * 0.8 + serviceBonus * 0.2;
 
         return new PopularGameResponse(
                 game.getIgdbId(),
@@ -41,25 +49,38 @@ public record PopularGameResponse(
                 game.getViewCount(),
                 game.getLikeCount(),
                 game.getReviewCount(),
-                score
+                Math.round(score * 10.0) / 10.0
         );
     }
 
-    // 종합 인기 점수 계산
-    private static double calculateScore(Game game) {
-        // IGDB 점수 (0~100), 없으면 50
-        double igdbScore = game.getIgdbRating() != null ? game.getIgdbRating() : 50.0;
+    /**
+     * DB 데이터만으로 생성 (자체 인기 순위용)
+     */
+    public static PopularGameResponse fromGame(Game game) {
+        double serviceScore = calculateServiceBonus(game);
 
-        // 자체 서비스 점수 계산
-        double serviceScore =
-                game.getViewCount() * 0.1 +                 // 조회 1회 = 0.1점
-                        game.getLikeCount() * 2.0 +         // 좋아요 1개 = 2점
-                        game.getReviewCount() * 5.0;        // 리뷰 1개 = 5점
+        return new PopularGameResponse(
+                game.getIgdbId(),
+                game.getName(),
+                game.getCoverImageId(),
+                game.getIgdbRating(),
+                game.getIgdbRatingCount(),
+                game.getViewCount(),
+                game.getLikeCount(),
+                game.getReviewCount(),
+                Math.round(serviceScore * 10.0) / 10.0
+        );
+    }
 
-        // 서비스 점수 상한 (100점)
-        serviceScore = Math.min(serviceScore, 100.0);
+    /**
+     * 자체 서비스 보너스 점수 (0~100)
+     */
+    private static double calculateServiceBonus(Game game) {
+        double score =
+                game.getViewCount() * 0.5 +
+                game.getLikeCount() * 3.0 +
+                game.getReviewCount() * 5.0;
 
-        // 혼합 (IGDB 70% + 자체 30%)
-        return (igdbScore * 0.7) + (serviceScore * 0.3);
+        return Math.min(score, 100.0);
     }
 }

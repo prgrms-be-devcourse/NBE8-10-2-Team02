@@ -19,13 +19,12 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
     // 자체 서비스 인기 (좋아요 기준)
     List<Game> findTop10ByOrderByLikeCountDesc();
 
-    // 종합 인기 점수 기준 (JPQL)
-    @Query("""                                                                                                   
+    // 자체 서비스 인기 점수 기준 (JPQL)
+    @Query("""
       SELECT g FROM Game g
       WHERE g.coverImageId IS NOT NULL
       ORDER BY (
-          COALESCE(g.igdbRating, 50.0) * 0.7 +
-          LEAST(g.viewCount * 0.1 + g.likeCount * 2.0 + g.reviewCount * 5.0, 100.0) * 0.3
+          LEAST(g.viewCount * 0.5 + g.likeCount * 3.0 + g.reviewCount * 5.0, 100.0)
       ) DESC
       """)
     List<Game> findPopularGames(Pageable pageable);

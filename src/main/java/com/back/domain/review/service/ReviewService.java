@@ -21,6 +21,7 @@ public class ReviewService {
 
     public Review write(String title, String content, double rating, Member member, Game game) {
         Review review = new Review(title, content, rating, member, game);
+        game.incrementReviewCount();
         return reviewRepository.save(review);
     }
 
@@ -33,6 +34,7 @@ public class ReviewService {
     }
 
     public void delete(Review review) {
+        review.getGame().decrementReviewCount();
         reviewRepository.delete(review);
     }
 

@@ -35,7 +35,7 @@ public class GameLikeService {
             // 없으면 추가
             GameLike gameLike = GameLike.createGameLike(member, game);
             gameLikeRepository.save(gameLike);
-            game.decrementLikeCount();
+            game.incrementLikeCount();
             return true;
         }
     }

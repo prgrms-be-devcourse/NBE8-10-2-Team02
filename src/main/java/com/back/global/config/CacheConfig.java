@@ -4,6 +4,7 @@ import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
 import com.back.domain.game.game.dto.PopularGameResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
+import com.back.global.igdb.dto.PopularGameCardDto;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.context.annotation.Bean;
@@ -59,6 +60,14 @@ public class CacheConfig {
     public Cache<Long, AtomicLong> viewCountCache() {
         return Caffeine.newBuilder()
                 .maximumSize(10000)  // 최대 1만 게임
+                .build();
+    }
+
+    @Bean
+    public Cache<String, List<PopularGameCardDto>> igdbPopularGamesCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(10)
+                .expireAfterWrite(Duration.ofMinutes(30))  // IGDB 데이터는 24시간마다 갱신되므로 30분 캐시
                 .build();
     }
 }
