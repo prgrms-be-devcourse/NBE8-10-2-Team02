@@ -84,4 +84,5 @@ public class ApiV1GameControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Similar Game"));
     }
+
 }

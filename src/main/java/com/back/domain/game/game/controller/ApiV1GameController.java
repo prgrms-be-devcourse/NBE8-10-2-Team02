@@ -1,17 +1,13 @@
 package com.back.domain.game.game.controller;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
-import com.back.domain.game.game.dto.GameSearchByNameResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
 import com.back.domain.game.game.service.GameService;
-import com.back.global.rsData.RsData;
 import com.back.domain.game.game.dto.GameSearchCondition;
 import com.back.domain.game.game.dto.GameSearchResponse;
 import com.back.domain.game.game.dto.GenreResponse;
-import com.back.domain.game.game.repository.GenreRepository;
 import com.back.domain.game.game.service.GameSearchService;
-import com.back.domain.game.game.service.GameService;
 
 import com.back.domain.game.game.service.GenreService;
 import com.back.domain.game.platform.PlatformGroup;
@@ -43,6 +39,7 @@ public class ApiV1GameController {
     public List<SimilarGameResponse> getSimilarGames(@PathVariable long igdbId) {
         return gameService.getSimilarGames(igdbId);
     }
+//---------------------------------------------------
 
     //    슬기구현
     @GetMapping("/games/search")

@@ -8,6 +8,7 @@ import com.back.domain.game.game.entity.Genre;
 import com.back.domain.game.game.repository.GameRepository;
 import com.back.domain.game.game.repository.GameSearchRepository;
 import com.back.domain.game.game.repository.GenreRepository;
+import com.back.global.exception.ServiceException;
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
 import com.back.global.igdb.service.IgdbService;
 import lombok.RequiredArgsConstructor;
@@ -30,11 +31,14 @@ public class GameSearchService {
 
     private final IgdbService igdbService;
     private final GenreRepository genreRepository;
-    private final GameSearchRepository gameSearchRepository;
 
 
     public List<GameSearchResponse> search(GameSearchCondition condition) {
 
+        // 1. 입력 값 정규화 및 검증
+        if (condition.getQuery() == null || condition.getQuery().isBlank()) {
+            throw new ServiceException("400-2", "검색어를 입력해주세요.");
+        }
         condition.setQuery(normalize(condition.getQuery()));
 
         boolean hasPlatformFilter =
@@ -44,6 +48,11 @@ public class GameSearchService {
         if (hasPlatformFilter) {
             String normalized = condition.getPlatformCode().trim().toUpperCase();
             List<Long> mappedIds = PLATFORM_MAP.get(normalized);
+
+            if (mappedIds == null || mappedIds.isEmpty()) {
+                throw new ServiceException("400-1", "지원하지 않는 플랫폼 코드입니다: " + normalized);
+            }
+
             condition.setPlatformIgdbIds(mappedIds);
         } else {
             condition.setPlatformIgdbIds(null);
@@ -61,7 +70,12 @@ public class GameSearchService {
 //        }
 
 //        IGDB 검색
-        List<IgdbGameSummaryDto> igdbGames = igdbService.search(condition);
+        List<IgdbGameSummaryDto> igdbGames;
+        try {
+            igdbGames = igdbService.search(condition);
+        } catch (Exception e) {
+            throw new ServiceException("502-1", "외부 게임 검색 서버 오류");
+        }
 
         // 2. 장르 매핑
         Set<Long> genreIgdbIds = igdbGames.stream()
