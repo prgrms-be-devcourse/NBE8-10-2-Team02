@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record GameDetailResponse(
+        int gameId,
         long igdbId,
         String gameName,
         String summary,
@@ -19,6 +20,7 @@ public record GameDetailResponse(
             "https://images.igdb.com/igdb/image/upload/{size}/{id}.jpg";
 
     public static GameDetailResponse from(
+            int gameId,
             long igdbId,
             String gameName,
             String summary,
@@ -30,6 +32,7 @@ public record GameDetailResponse(
             List<String> platforms
     ) {
         return new GameDetailResponse(
+                gameId,
                 igdbId,
                 gameName,
                 summary,
