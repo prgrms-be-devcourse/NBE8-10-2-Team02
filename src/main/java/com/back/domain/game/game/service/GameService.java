@@ -132,6 +132,7 @@ public class GameService {
         List<String> platforms = gamePlatformRepository.findPlatformNamesByGameId(game.getId());
 
         return GameDetailResponse.from(
+                game.getId(),
                 game.getIgdbId(),
                 game.getName(),
                 game.getSummary(),

@@ -33,6 +33,7 @@ public class ApiV1GameControllerTest {
         long igdbId = 10L;
         when(gameService.getGameDetail(igdbId))
                 .thenReturn(GameDetailResponse.from(
+                        1,
                         igdbId, "Zelda", "summary", null, "co",
                         List.of("Nintendo"), List.of("Nintendo"),
                         List.of("Action"), List.of("Switch")
