@@ -263,4 +263,64 @@ class ApiV1MemberControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.resultCode").value("400-1"));
     }
+
+    @Test
+    @DisplayName("닉네임 변경: 로그인 안 하면 401-1")
+    void changeNickname_unauthorized() throws Exception {
+        mvc.perform(put("/api/v1/members/me/nickname")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "nickname", "새닉네임"
+                        ))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.resultCode").value("401-1"));
+    }
+
+    @Test
+    @DisplayName("닉네임 변경 성공: /me 조회 시 변경된 닉네임이 나온다")
+    void changeNickname_success() throws Exception {
+        String email = uniqueEmail();
+        String oldNick = uniqueNickname();
+        String newNick = "새닉_" + System.nanoTime();
+
+        signup(email, "1234", oldNick);
+        Cookie[] cookies = loginAndGetCookies(email, "1234");
+
+        mvc.perform(put("/api/v1/members/me/nickname")
+                        .with(csrf())
+                        .cookie(cookies)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "nickname", newNick
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-1"));
+
+        // 변경 확인: /me
+        mvc.perform(get("/api/v1/members/me").cookie(cookies))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andExpect(jsonPath("$.data.nickname").value(newNick));
+    }
+
+    @Test
+    @DisplayName("닉네임 변경: validation 실패(빈 값)이면 400-1")
+    void changeNickname_validation_fail() throws Exception {
+        String email = uniqueEmail();
+        String nickname = uniqueNickname();
+
+        signup(email, "1234", nickname);
+        Cookie[] cookies = loginAndGetCookies(email, "1234");
+
+        mvc.perform(put("/api/v1/members/me/nickname")
+                        .with(csrf())
+                        .cookie(cookies)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "nickname", ""
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.resultCode").value("400-1"));
+    }
 }
