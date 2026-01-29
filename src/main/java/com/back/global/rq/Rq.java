@@ -9,11 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.RequestScope; // ✅ 추가
 
 import java.util.Arrays;
 import java.util.Optional;
 
 @Component
+@RequestScope // ✅ 중요: 매 요청마다 새 객체를 생성하여 스레드 간 충돌 방지
 @RequiredArgsConstructor
 public class Rq {
     private final HttpServletRequest req;
@@ -49,14 +51,13 @@ public class Rq {
     }
 
     public String getCookieValue(String name, String defaultValue) {
-        return Optional.ofNullable(req.getCookies())
-                .flatMap(cookies ->
-                        Arrays.stream(cookies)
-                                .filter(cookie -> cookie.getName().equals(name))
-                                .map(Cookie::getValue)
-                                .filter(v -> !v.isBlank())
-                                .findFirst()
-                )
+        if (req.getCookies() == null) return defaultValue;
+
+        return Arrays.stream(req.getCookies())
+                .filter(cookie -> cookie.getName().equals(name))
+                .map(Cookie::getValue)
+                .filter(v -> !v.isBlank())
+                .findFirst()
                 .orElse(defaultValue);
     }
 
