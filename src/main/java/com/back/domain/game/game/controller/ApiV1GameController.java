@@ -76,12 +76,16 @@ public class ApiV1GameController {
     public List<GameSearchResponse> search(
             @RequestParam String query,
             @RequestParam(required = false) List<Long> genre,
-            @RequestParam(required = false) String  platform
+            @RequestParam(required = false) String  platform,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
     ) {
         GameSearchCondition condition = new GameSearchCondition();
         condition.setQuery(query);
         condition.setGenreIds(genre);
         condition.setPlatformCode(platform);
+        condition.setPage(page);
+        condition.setSize(size);
 
         return gameSearchService.search(condition);
     }
