@@ -5,7 +5,6 @@ import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.dto.IgdbInvolvedCompanyDto;
 import com.back.global.igdb.dto.IgdbVideoDto;
 import com.back.global.igdb.exception.IgdbApiException;
-import com.google.common.util.concurrent.RateLimiter;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -23,14 +22,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
- * 요청 헤더: Client-ID, Authorization
- * body(APICALYPSE)가 원하는대로 들어갔는지 체크
- * IGDB 응답 JSON이 DTO로 잘 역직렬화되는지 체크
+ * IgdbClient 단위 테스트
+ * - 요청 헤더 (Client-ID, Authorization) 검증
+ * - 요청 body (APICALYPSE) 검증
+ * - 응답 JSON → DTO 역직렬화 검증
+ *
+ * 참고: RateLimiter, 재시도 로직은 IgdbRetryInterceptorTest에서 테스트
  */
 public class IgdbClientTest {
     private IgdbProperties props = mock(IgdbProperties.class);
     private TwitchTokenService tokenService = mock(TwitchTokenService.class);
-    private RateLimiter rateLimiter = mock(RateLimiter.class);
 
     private MockWebServer server;
     private IgdbClient igdbClient;
@@ -48,7 +49,7 @@ public class IgdbClientTest {
         when(props.clientId()).thenReturn("test-client-id");
         when(tokenService.getAccessToken()).thenReturn("test-access-token");
 
-        igdbClient = new IgdbClient(restClient, props, tokenService, rateLimiter);
+        igdbClient = new IgdbClient(restClient, props, tokenService);
     }
 
     @AfterEach
@@ -155,63 +156,6 @@ public class IgdbClientTest {
                 .isInstanceOf(IgdbApiException.class);
     }
 
-    @Test
-    @DisplayName("게임상세조회 - 429후 성공")
-    void t5_getGameDetail_429_thenRetrySuccess() {
-        String body = """
-            [
-                {
-                    "id": 999,
-                    "name": "Test Game",
-                    "summary": "Hello",
-                    "first_release_date": 1645747200,
-                    "cover": {"id": 10, "image_id": "co4jni"},
-                    "involved_companies": [
-                        {
-                            "id": 1,
-                            "company": {"id": 100, "name": "FromSoftware"},
-                            "developer": true,
-                            "publisher": false
-                        },
-                        {
-                            "id": 2,
-                            "company": {"id": 200, "name": "Bandai Namco"},
-                            "developer": false,
-                            "publisher": true
-                        }
-                    ],
-                    "genres": [
-                        { "id": 1, "name": "RPG" },
-                        { "id": 2, "name": "Action" }
-                    ],
-                    "platforms": [{"id": 6, "name": "PC (Microsoft Windows)"}]
-                }
-            ]
-            """;
-
-        server.enqueue(new MockResponse().setResponseCode(429));
-
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                    .addHeader("Content-Type", "application/json")
-                .setBody(body));
-
-        IgdbGameDetailDto detail = igdbClient.getGameDetail(999L);
-
-        assertThat(detail).isNotNull();
-        assertThat(server.getRequestCount()).isEqualTo(2);
-    }
-    @Test
-    @DisplayName("게임상세조회 - 429 최대 재시도(3회) 초과 시 예외 발생")
-    void t6_getGameDetail_429_maxRetryExceeded() {
-        for (int i = 0; i < 4; i++) {
-            server.enqueue(new MockResponse().setResponseCode(429));
-        }
-
-        assertThatThrownBy(() -> igdbClient.getGameDetail(1L))
-                .isInstanceOf(IgdbApiException.class);
-    }
-    
     @Test
     @DisplayName("영상Id조회 - 성공")
     public void t7_getVideoId_성공() throws Exception {
@@ -323,28 +267,6 @@ public class IgdbClientTest {
         assertThat(req.getHeader("Client-ID")).isEqualTo("test-client-id");
         assertThat(req.getHeader("Authorization")).isEqualTo("Bearer test-access-token");
         assertThat(req.getHeader("Content-Type")).startsWith("text/plain");
-    }
-
-    @Test
-    @DisplayName("모든 요청마다 RateLimiter.acquire()가 호출되어 rate limit 방지")
-    void t12_rateLimiter_acquireCalledOnEveryRequest() {
-        String body = """
-            [{"id": 1, "name": "Test"}]
-            """;
-
-        int requestCount = 5;
-        for (int i = 0; i < requestCount; i++) {
-            server.enqueue(new MockResponse()
-                    .setResponseCode(200)
-                    .addHeader("Content-Type", "application/json")
-                    .setBody(body));
-        }
-
-        for (int i = 0; i < requestCount; i++) {
-            igdbClient.getGameDetail(1L);
-        }
-
-        verify(rateLimiter, times(requestCount)).acquire();
     }
 
     // 공통 요청 검증

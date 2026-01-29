@@ -40,6 +40,7 @@ public class ReviewService {
         }
 
         Review review = new Review(title, content, rating, member, game);
+        game.incrementReviewCount();
         return reviewRepository.save(review);
     }
 
@@ -72,6 +73,7 @@ public class ReviewService {
     }
 
     public void delete(Review review) {
+        review.getGame().decrementReviewCount();
         // Clear the review reference in MemberGame if it exists
         memberGameRepository.findByMemberIdAndGameId(review.getAuthor().getId(), review.getGame().getId())
                 .ifPresent(memberGame -> memberGame.setReview(null));

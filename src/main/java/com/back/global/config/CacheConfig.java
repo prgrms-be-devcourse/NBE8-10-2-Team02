@@ -1,8 +1,10 @@
-package com.back.global.cache;
+package com.back.global.config;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
+import com.back.domain.game.game.dto.PopularGameResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
+import com.back.global.igdb.dto.PopularGameCardDto;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Configuration
 public class CacheConfig {
@@ -42,6 +45,29 @@ public class CacheConfig {
         return Caffeine.newBuilder()
                 .maximumSize(20_000)
                 .expireAfterWrite(Duration.ofHours(24))
+                .build();
+    }
+
+    @Bean
+    public Cache<String, List<PopularGameResponse>> popularGamesCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(50)
+                .expireAfterWrite(Duration.ofMinutes(10))  // 10분마다 갱신
+                .build();
+    }
+
+    @Bean
+    public Cache<Long, AtomicLong> viewCountCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(10000)  // 최대 1만 게임
+                .build();
+    }
+
+    @Bean
+    public Cache<String, List<PopularGameCardDto>> igdbPopularGamesCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(10)
+                .expireAfterWrite(Duration.ofMinutes(30))  // IGDB 데이터는 24시간마다 갱신되므로 30분 캐시
                 .build();
     }
 }
