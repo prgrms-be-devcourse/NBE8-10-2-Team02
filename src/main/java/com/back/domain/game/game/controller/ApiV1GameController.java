@@ -3,6 +3,15 @@ package com.back.domain.game.game.controller;
 import com.back.domain.game.game.dto.*;
 import com.back.domain.game.game.service.GameService;
 import com.back.domain.game.game.service.GameSearchService;
+import com.back.domain.game.game.dto.GameDetailResponse;
+import com.back.domain.game.game.dto.GameVideoResponse;
+import com.back.domain.game.game.dto.SimilarGameResponse;
+import com.back.domain.game.game.service.GameService;
+import com.back.domain.game.game.dto.GameSearchCondition;
+import com.back.domain.game.game.dto.GameSearchResponse;
+import com.back.domain.game.game.dto.GenreResponse;
+import com.back.domain.game.game.service.GameSearchService;
+
 import com.back.domain.game.game.service.GenreService;
 import com.back.domain.game.platform.PlatformGroup;
 import com.back.global.igdb.dto.PopularGameCardDto;
@@ -39,6 +48,7 @@ public class ApiV1GameController {
     public List<SimilarGameResponse> getSimilarGames(@PathVariable long igdbId) {
         return gameService.getSimilarGames(igdbId);
     }
+//---------------------------------------------------
 
     /*@GetMapping("/games/popular")
     @Operation(summary = "인기 게임 조회 (자체 서비스)", description = "DB 또는 IGDB+DB 하이브리드 인기 순위")

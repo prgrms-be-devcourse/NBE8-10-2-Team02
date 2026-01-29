@@ -2,6 +2,7 @@ package com.back.domain.game.game.entity;
 
 import com.back.global.jpa.entity.BaseEntity;
 import com.back.standard.util.TimeUt;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.List;
         uniqueConstraints = @UniqueConstraint(name = "uk_game_igdb_id", columnNames = "igdb_id"),
         indexes = @Index(name = "ix_game_name", columnList = "name")
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer"})
 public class Game extends BaseEntity {
     @Column(name = "igdb_id", nullable = false)
     private long igdbId;
@@ -46,18 +48,19 @@ public class Game extends BaseEntity {
     private LocalDate firstReleaseDate;
     private Instant lastFetchedAt;
 
-    @OneToMany(mappedBy = "game")
-    private List<GameGenre> gameGenres;
-
-    @OneToMany(mappedBy = "game")
-    private List<GamePlatform> gamePlatforms;
-
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GameGenre> gameGenres = new ArrayList<>();
+  
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GamePlatform> gamePlatforms = new ArrayList<>();
+  
     private Double igdbRating;
     private Integer igdbRatingCount;
 
     private long viewCount = 0;
     private long likeCount = 0;
     private long reviewCount = 0;
+  
 
     public static Game createGame(
             long igdbId,
@@ -137,4 +140,18 @@ public class Game extends BaseEntity {
         this.igdbRating = rating;
         this.igdbRatingCount = ratingCount;
     }
+
+    public void addPlatform(Platform platform) {
+        GamePlatform gp = GamePlatform.createGamePlatform(this, platform);
+        this.gamePlatforms.add(gp);
+    }
+
+    public void addGenre(Genre genre) {
+        GameGenre gg = GameGenre.createGameGenre(this, genre);
+        this.gameGenres.add(gg);
+    }
+
+
+
+
 }

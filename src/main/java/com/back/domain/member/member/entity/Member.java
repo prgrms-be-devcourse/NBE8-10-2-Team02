@@ -1,6 +1,7 @@
 package com.back.domain.member.member.entity;
 
 import com.back.domain.game.game.entity.Game;
+import com.back.domain.member.memberGame.StatusEnum;
 import com.back.domain.member.memberGame.entity.MemberGame;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.Column;
@@ -62,24 +63,24 @@ public class Member extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    public MemberGame addMemberGame(String platform, double playtime, boolean isFavorite, Game game) {
-        MemberGame memberGame = new MemberGame(platform, playtime, isFavorite, this, game);
+    public MemberGame addMemberGame(String platform, double playtime, boolean isFavorite, StatusEnum status, Game game) {
+        MemberGame memberGame = new MemberGame(platform, playtime, isFavorite, status, this, game);
         library.add(memberGame);
         return memberGame;
     }
-    public void updateMemberGame(Game game) {
 
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
     }
 
-    public Optional<MemberGame> getMemberGameById(int id) {//make it so that it returns detailDto
+    public Optional<MemberGame> getMemberGameById(int memberGameId) {//make it so that it returns detailDto
                 return library
                         .stream()
-                        .filter(memberGame -> memberGame.getId() == id)
+                        .filter(memberGame -> memberGame.getId() == memberGameId)
                         .findFirst();
     }
 
-    public boolean removeGame(MemberGame memberGame) {
-               if (memberGame == null) return false;
-           return library.remove(memberGame);
+    public boolean removeGame(int memberGameId) {
+        return library.removeIf(memberGame -> memberGame.getId() == memberGameId);
     }
 }

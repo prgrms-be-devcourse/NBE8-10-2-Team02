@@ -16,7 +16,9 @@ public record PostDto (
     String content,
     LocalDateTime createDate,
     LocalDateTime modifyDate,
-    List<String > tags
+    List<String > tags,
+    int viewCount,
+    long likeCount
 ) {
     public PostDto(Post post) {
         this(
@@ -29,7 +31,9 @@ public record PostDto (
         post.getModifyDate(),
                 post.getPostTags().stream()
                         .map(pt->pt.getTag().getContent())
-                        .toList()
+                        .toList(),
+                post.getViewCount(),
+                post.getPostLikes() != null ? post.getPostLikes().size() : 0
         );
     }
 }

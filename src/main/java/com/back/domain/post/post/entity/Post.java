@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tags;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -25,6 +26,7 @@ import static jakarta.persistence.FetchType.*;
 @NoArgsConstructor
 public class Post extends BaseEntity {
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String content;
     @CreatedDate
     @Column(updatable = false)
@@ -38,8 +40,14 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post", cascade = {PERSIST, REMOVE}, orphanRemoval = true)
     private List<PostComment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post", cascade = ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int viewCount;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> postLikes = new ArrayList<>();
 
     public Post(Member author, String title, String content) {
         this.author = author;
@@ -77,13 +85,19 @@ public class Post extends BaseEntity {
     }
 
     public void addTag(Tag tag){
-        postTags.add(new PostTag(this, tag));
+        PostTag postTag = new PostTag(this, tag);
+        this.postTags.add(postTag);
+
     }
 
-    public boolean deleteTag(Tag tag){
-        return postTags.removeIf(
-                postTag ->postTag.getTag().equals(tag)
-        );
+    public void increaseViewCount() {
+        this.viewCount++;
     }
+
+//    public boolean deleteTag(Tag tag){
+//        return postTags.removeIf(
+//                postTag ->postTag.getTag().equals(tag)
+//        );
+//    }
 
 }

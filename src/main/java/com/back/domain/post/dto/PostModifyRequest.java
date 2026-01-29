@@ -1,5 +1,6 @@
 package com.back.domain.post.dto;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -11,7 +12,7 @@ public record PostModifyRequest(
         String title,
 
         @NotBlank
-        @Size(max = 5000)
+        @Column(columnDefinition = "TEXT")
         String content,
         List<String>tags
 ) {}

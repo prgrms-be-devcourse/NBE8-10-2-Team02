@@ -49,7 +49,7 @@ public class QPostTag extends EntityPathBase<PostTag> {
 
     public QPostTag(Class<? extends PostTag> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.post = inits.isInitialized("post") ? new com.back.domain.post.post.entity.QPost(forProperty("post")) : null;
+        this.post = inits.isInitialized("post") ? new com.back.domain.post.post.entity.QPost(forProperty("post"), inits.get("post")) : null;
         this.tag = inits.isInitialized("tag") ? new com.back.domain.tag.tag.entity.QTag(forProperty("tag")) : null;
     }
 

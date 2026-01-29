@@ -4,22 +4,17 @@ import com.back.domain.member.auth.service.AuthTokenService;
 import com.back.domain.game.game.entity.Game;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
-import com.back.domain.member.memberGame.entity.MemberGame;
-import com.back.domain.member.memberGame.repository.MemberGameRepository;
 import com.back.global.exception.ServiceException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
-
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthTokenService authTokenService;
@@ -64,7 +59,6 @@ public class MemberService {
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new ServiceException("401-1", "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-
         return member;
     }
 
@@ -76,8 +70,6 @@ public class MemberService {
         return authTokenService.payload(accessToken);
     }
 
-
-    @Transactional
     public Member changePassword(int memberId, String oldPassword, String newPassword) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
@@ -94,10 +86,31 @@ public class MemberService {
         member.changePassword(encoded);
         return member;
     }
-    public MemberGame addToLibrary(String platform, double playtime, boolean isFavorite,  Member member, Game game) {
-        return member.addMemberGame(platform, playtime, isFavorite, game);
+
+    public Member getMe(int memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
     }
+
     public void flush(){
         memberRepository.flush();
+    }
+
+    public Member changeNickname(int memberId, String newNickname) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceException("404-1", "회원이 존재하지 않습니다."));
+
+        String nn = newNickname.trim();
+
+        if (member.getNickname().equals(nn)) {
+            throw new ServiceException("400-1", "현재 닉네임과 동일합니다.");
+        }
+
+        if (memberRepository.existsByNicknameAndIdNot(nn, memberId)) {
+            throw new ServiceException("409-1", "이미 사용 중인 닉네임입니다.");
+        }
+
+        member.changeNickname(nn);
+        return member;
     }
 }

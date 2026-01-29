@@ -3,6 +3,8 @@ package com.back.domain.post.post.service;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.post.dto.PostModifyRequest;
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.entity.PostLike;
+import com.back.domain.post.post.repository.PostLikeRepository;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.postComment.PostCommentRepository;
 import com.back.domain.post.postComment.entity.PostComment;
@@ -25,7 +27,7 @@ public class PostService {
     private final PostRepository postRepository;
     private  final TagService tagService;
     private final PostCommentRepository postCommentRepository;
-
+    private final PostLikeRepository postLikeRepository;
 
     public Page<Post> findAll(Pageable pageable) {
         return postRepository.findAll(pageable);
@@ -48,20 +50,48 @@ public class PostService {
     }
 
 
+    @Transactional
     public void modify(Post post, PostModifyRequest request) {
         post.modify(request.title(), request.content());
+        post.getPostTags().clear();
+
+        flush();
+        if (request.tags() != null) {
+            for (String tagName : request.tags()) {
+                Tag tag = tagService.getOrCreate(tagName);
+                post.addTag(tag);
+            }
+        }
     }
 
     public Optional<Post> findById(int id) {
-        return postRepository.findById(id);
+        Optional<Post> opPost = postRepository.findById(id);
+
+        if(opPost.isPresent()){
+            Post post = opPost.get();
+            post.increaseViewCount();
+        }
+        return opPost;
     }
 
-    public Page<Post> searchByTitle(String keyword, Pageable pageable){
-        return postRepository.findByTitleContainingIgnoreCase(keyword, pageable);
-    }
+//    public Page<Post> searchByTitle(String keyword, Pageable pageable){
+//        return postRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+//    }
+//
+//    public Page<Post> searchByTagName(String tagName, Pageable pageable){
+//        return postRepository.findByPostTags_Tag_Content(tagName, pageable);
+//    }
 
-    public Page<Post> searchByTagName(String tagName, Pageable pageable){
-        return postRepository.findByPostTags_Tag_Content(tagName, pageable);
+    @Transactional(readOnly = true)
+    public Page<Post> search(String kw, String tag, Pageable pageable) {
+        String searchKw = (kw != null && !kw.isBlank()) ? kw : null;
+        String searchTag = (tag != null && !tag.isBlank()) ? tag : null;
+
+        if (searchKw == null && searchTag == null) {
+            return postRepository.findAll(pageable);
+        }
+
+        return postRepository.search(searchKw, searchTag, pageable);
     }
 
     public PostComment writeComment(Member author, Post post, String content, Integer parentCommentId) {
@@ -113,28 +143,53 @@ public class PostService {
         postRepository.flush();
     }
 
-    public void addTag(int id, int tagId) {
-        Post post = findById(id)
-                .orElseThrow(() -> new ServiceException("404-1", "게시글을 찾을 수 없습니다.")); //
-
-        Tag tag = tagService.findById(tagId)
-                .orElseThrow(() -> new ServiceException("404-2", "태그를 찾을 수 없습니다.")); //
-
-        post.addTag(tag);
-    }
-
-    public void deleteTag(Post post, Tag tag){
-        boolean removed = post.deleteTag(tag);
-
-        if (!removed) {
-            throw new ServiceException("400-2", "게시글에 존재하지 않는 태그입니다.");
-        }
-    }
+//    public void addTag(int id, int tagId) {
+//        Post post = findById(id)
+//                .orElseThrow(() -> new ServiceException("404-1", "게시글을 찾을 수 없습니다.")); //
+//
+//        Tag tag = tagService.findById(tagId)
+//                .orElseThrow(() -> new ServiceException("404-2", "태그를 찾을 수 없습니다.")); //
+//
+//        post.addTag(tag);
+//    }
+//
+//    public void deleteTag(Post post, Tag tag){
+//        boolean removed = post.deleteTag(tag);
+//
+//        if (!removed) {
+//            throw new ServiceException("400-2", "게시글에 존재하지 않는 태그입니다.");
+//        }
+//    }
 
     public void checkPermission(Post post, Member author){
         if(post.getAuthor().getId() != author.getId()){
             throw new ServiceException("403-1", "해당 게시글에 대한 권한이 없습니다.");
         }
+    }
+
+    public boolean toggleLike(Member member, int postId){
+        Post post = postRepository.findById(postId)
+                .orElseThrow(()->new ServiceException("404-1","게시글이 존재하지 않습니다."));
+
+        Optional<PostLike> opLike = postLikeRepository.findByMemberAndPost(member,post);
+
+        if(opLike.isPresent()){
+            postLikeRepository.delete(opLike.get());
+            return false;
+        }else {
+            postLikeRepository.save(PostLike.builder()
+                    .member(member)
+                    .post(post)
+                    .build());
+            return true;
+        }
+    }
+
+    public long getLikeCount(int postId){
+        Post post = postRepository.findById(postId)
+                .orElseThrow(()->new ServiceException("404-1","게시글이 없습니다."));
+
+        return postLikeRepository.countByPost(post);
     }
 
 

@@ -7,6 +7,7 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
+import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
@@ -30,7 +31,11 @@ public class QMember extends EntityPathBase<Member> {
     //inherited
     public final NumberPath<Integer> id = _super.id;
 
+    public final ListPath<com.back.domain.member.memberGame.entity.MemberGame, com.back.domain.member.memberGame.entity.QMemberGame> library = this.<com.back.domain.member.memberGame.entity.MemberGame, com.back.domain.member.memberGame.entity.QMemberGame>createList("library", com.back.domain.member.memberGame.entity.MemberGame.class, com.back.domain.member.memberGame.entity.QMemberGame.class, PathInits.DIRECT2);
+
     public final DateTimePath<java.time.LocalDateTime> modifyDate = createDateTime("modifyDate", java.time.LocalDateTime.class);
+
+    public final StringPath nickname = createString("nickname");
 
     public final StringPath password = createString("password");
 
