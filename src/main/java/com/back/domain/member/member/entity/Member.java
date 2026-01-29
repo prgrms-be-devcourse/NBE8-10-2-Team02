@@ -63,8 +63,8 @@ public class Member extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    public MemberGame addMemberGame(String platform, double playtime, boolean isFavorite, StatusEnum status, Game game) {
-        MemberGame memberGame = new MemberGame(platform, playtime, isFavorite, status, this, game);
+    public MemberGame addMemberGame(Long platformId, double playtime, boolean isFavorite, StatusEnum status, Game game) {
+        MemberGame memberGame = new MemberGame(platformId, playtime, isFavorite, status, this, game);
         library.add(memberGame);
         return memberGame;
     }
