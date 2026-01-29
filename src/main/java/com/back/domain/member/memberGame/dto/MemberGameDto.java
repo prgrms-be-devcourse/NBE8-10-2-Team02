@@ -19,7 +19,7 @@ public record MemberGameDto(
     public MemberGameDto(MemberGame memberGame){
         this(
                 memberGame.getId(),
-                memberGame.getPlatform(),
+                memberGame.getPlatformGroupName(),
                 memberGame.getPlaytime(),
                 memberGame.isFavorite(),
                 memberGame.getStatus(),
