@@ -9,7 +9,6 @@ import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.*;
 import com.back.global.igdb.service.IgdbPopularRightNowService;
-import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,30 +39,15 @@ public class GameService {
     private final GamePlatformRepository gamePlatformRepository;
     private final IgdbClient igdbClient;
     private final IgdbPopularRightNowService igdbPopularRightNowService;
-
-    private final Cache<Long, GameDetailResponse> gameDetailCache;
-    private final Cache<Long, GameVideoResponse> videoIdCache;
-    private final Cache<Long, List<Long>> similarIdsCache;
-    private final Cache<Long, List<SimilarGameResponse>> similarListCache;
-    private final Cache<String, List<PopularGameResponse>> popularGamesCache;
-    private final Cache<String, List<PopularGameCardDto>> igdbPopularGamesCache;
-    private final Cache<Long, AtomicLong> viewCountCache;
+    private final GameCacheService gameCacheService;
 
     private static final Duration DB_STALE_AFTER = Duration.ofDays(7);
-
-    public List<GameSearchByNameResponse> search(String q) {
-        // 1. cache에서 찾기
-
-        // 2. api호출
-        return igdbClient.searchGames(q, 10).stream()
-                .map(GameSearchByNameResponse::fromDto).toList();
-    }
 
     @Transactional(readOnly = true)
     public List<PopularGameResponse> getPopularGames(int limit) {
         // 1. 캐시 확인
         String cacheKey = "popular_" + limit;
-        List<PopularGameResponse> cached = popularGamesCache.getIfPresent(cacheKey);
+        List<PopularGameResponse> cached = gameCacheService.getPopularGames(cacheKey);
         if (cached != null) return cached;
 
         // 2. DB에서 조회
@@ -73,7 +57,7 @@ public class GameService {
                 .map(PopularGameResponse::fromGame)
                 .toList();
 
-        popularGamesCache.put(cacheKey, result);
+        gameCacheService.putPopularGames(cacheKey, result);
         return result;
     }
 
@@ -84,12 +68,12 @@ public class GameService {
      */
     public List<PopularGameCardDto> getIgdbPopularGames(int limit) {
         String cacheKey = "igdb_popular_" + limit;
-        List<PopularGameCardDto> cached = igdbPopularGamesCache.getIfPresent(cacheKey);
+        List<PopularGameCardDto> cached = gameCacheService.getIgdbPopularGames(cacheKey);
         if (cached != null) return cached;
 
         List<PopularGameCardDto> result = igdbPopularRightNowService.popularRightNow(limit);
 
-        igdbPopularGamesCache.put(cacheKey, result);
+        gameCacheService.putIgdbPopularGames(cacheKey, result);
         return result;
     }
 
@@ -97,7 +81,7 @@ public class GameService {
     public List<PopularGameResponse> getPopularGamesHybrid(int limit) {
         // 1. 캐시 확인
         String cacheKey = "popular_hybrid_" + limit;
-        List<PopularGameResponse> cached = popularGamesCache.getIfPresent(cacheKey);
+        List<PopularGameResponse> cached = gameCacheService.getPopularGames(cacheKey);
         if (cached != null) return cached;
 
         // 2. popularity_primitives에서 인기 game_id + value 조회
@@ -140,7 +124,7 @@ public class GameService {
                 .sorted((a, b) -> Double.compare(b.popularityScore(), a.popularityScore()))
                 .toList();
 
-        popularGamesCache.put(cacheKey, result);
+        gameCacheService.putPopularGames(cacheKey, result);
         return result;
     }
 
@@ -148,49 +132,49 @@ public class GameService {
     public GameDetailResponse getGameDetail(long igdbId) {
         // 1. cache에서 찾기
         incrementViewCountInMemory(igdbId); //조회수 증가
-        GameDetailResponse cached = gameDetailCache.getIfPresent(igdbId);
+        GameDetailResponse cached = gameCacheService.getGameDetail(igdbId);
         if (cached != null) return cached;
 
         // 2. cache miss -> DB에서 찾기
         GameDetailResponse fromDb = findDetailFromDb(igdbId);
         if (fromDb != null) {
-            gameDetailCache.put(igdbId, fromDb);
+            gameCacheService.putGameDetail(igdbId, fromDb);
             return fromDb;
         }
 
         // 3. DB miss or stale -> api호출
         GameDetailResponse fetched = fetchPersistAndAssemble(igdbId);
-        gameDetailCache.put(igdbId, fetched);
+        gameCacheService.putGameDetail(igdbId, fetched);
         return fetched;
     }
 
     public GameVideoResponse getVideoId(long igdbId) {
         // 1. cache에서 찾기
-        GameVideoResponse cached = videoIdCache.getIfPresent(igdbId);
+        GameVideoResponse cached = gameCacheService.getVideo(igdbId);
         if (cached != null) return cached;
 
         // 2. api호출
         GameVideoResponse fetched = fetchVideoId(igdbId);
-        videoIdCache.put(igdbId, fetched);
+        gameCacheService.putVideo(igdbId, fetched);
         return fetched;
     }
 
     public List<SimilarGameResponse> getSimilarGames(long igdbId) {
         // 1. cachedList에서 찾기
-        List<SimilarGameResponse> cachedList = similarListCache.getIfPresent(igdbId);
+        List<SimilarGameResponse> cachedList = gameCacheService.getSimilarList(igdbId);
         if (cachedList != null) return cachedList;
 
         // 2. similar ids 캐시 확인
-        List<Long> ids = similarIdsCache.getIfPresent(igdbId);
+        List<Long> ids = gameCacheService.getSimilarIds(igdbId);
 
         // 3. ids가 없으면 igdb에서 similarGames id만 조회 후 캐시에 저장
         if (ids == null) {
             ids = igdbClient.getSimilarGameIds(igdbId);
             if (ids == null) ids = Collections.emptyList();
-            similarIdsCache.put(igdbId, ids);
+            gameCacheService.putSimilarIds(igdbId, ids);
         }
         if (ids.isEmpty()) {
-            similarListCache.put(igdbId, List.of());
+            gameCacheService.putSimilarList(igdbId, List.of());
             return List.of();
         }
         // 4. id들로 name + cover만 2차 조회 (limit 적용)
@@ -198,7 +182,7 @@ public class GameService {
         if (list == null) list = List.of();
 
         // 5. 결과 캐시
-        similarListCache.put(igdbId, list);
+        gameCacheService.putSimilarList(igdbId, list);
         return list;
     }
 
@@ -347,14 +331,14 @@ public class GameService {
     }
 
     private void incrementViewCountInMemory(long igdbId) {
-        viewCountCache.get(igdbId, k -> new AtomicLong(0)).incrementAndGet();
+        gameCacheService.incrementViewCount(igdbId);
     }
 
     // 5분마다 캐시에 있는 조회수를 DB에 반영
     @Scheduled(fixedRate = 300000)  // 5분
     @Transactional
     public void flushViewCountsToDb() {
-        Map<Long, AtomicLong> snapshot = new HashMap<>(viewCountCache.asMap());
+        Map<Long, AtomicLong> snapshot = gameCacheService.getViewCountSnapshot();
 
         if (snapshot.isEmpty()) return;
 
