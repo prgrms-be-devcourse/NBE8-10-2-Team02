@@ -6,7 +6,6 @@ import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
 import com.back.global.igdb.dto.IgdbGenreDto;
 import com.back.global.igdb.exception.IgdbApiException;
-import com.google.common.util.concurrent.RateLimiter;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +28,12 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class IgdbClient {
-    private static final String GENRES_ENDPOINT = "/game_videos";
     private static final String GAMES_ENDPOINT = "/games";
     private static final String GAME_VIDEOS_ENDPOINT = "/game_videos";
-    private static final int MAX_RETRIES = 3;
 
     private final RestClient igdbRestClient;
     private final IgdbProperties props;
     private final TwitchTokenService tokenService;
-    private final RateLimiter igdbRateLimiter;
 
     @PostConstruct
     public void warmUpToken() {
@@ -202,47 +198,23 @@ public class IgdbClient {
         Objects.requireNonNull(body, "IGDB request body must not be null");
         Objects.requireNonNull(responseType, "responseType must not be null");
 
-        //rate limiter
-        igdbRateLimiter.acquire();
+        try {
+            return igdbRestClient.post()
+                    .uri(endPoint)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .header("Client-ID", props.clientId())
+                    .header("Authorization", "Bearer " + tokenService.getAccessToken())
+                    .body(body)
+                    .retrieve()
+                    .body(responseType);
 
-        //429일 경우 재시도
-        int retryCount = 0;
-        while(true) {
-            try {
-                return igdbRestClient.post()
-                        .uri(endPoint)
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .header("Client-ID", props.clientId())
-                        .header("Authorization", "Bearer " + tokenService.getAccessToken())
-                        .body(body)
-                        .retrieve() // 요청을 보내고 응답을 가져올 준비를 하는 단계, 응답(상태코드, 헤더, 바디)을 받을 수 있는 핸들러가 만들어짐
-                        .body(responseType); // 응답 body를 어떤 타입으로 변환해서 꺼낼지 정하는 것, IGDB가 JSON 배열을 준다 -> Jackson이 responseType으로 역직렬화 해줌
-
-            } catch (RestClientResponseException e) {
-                //429처리
-                if (e.getStatusCode().value() == 429 && retryCount < MAX_RETRIES) {
-                    retryCount++;
-                    long waitMs = (long) Math.pow(2, retryCount) * 500; // 1, 2, 4 (초) ...
-                    log.warn("429 발생, {}ms 후 재시도 ({}/{})", waitMs, retryCount, MAX_RETRIES);
-                    try {
-                        Thread.sleep(waitMs);
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IgdbApiException("재시도 도중 Interrupte 발생", ex);
-                    }
-                    continue;
-                }
-
-                String msg = """
-                        %s 실패,
-                        status: %d
-                        body: %s
-                        """.formatted(actionName, e.getStatusCode().value(), e.getResponseBodyAsString());
-                throw new IgdbApiException(msg, e);
-            } catch (Exception e) {
-                String msg = "%s failed. error=%s".formatted(actionName, e.getMessage());
-                throw new IgdbApiException(msg, e);
-            }
+        } catch (RestClientResponseException e) {
+            String msg = "%s 실패, status: %d, body: %s"
+                    .formatted(actionName, e.getStatusCode().value(), e.getResponseBodyAsString());
+            throw new IgdbApiException(msg, e);
+        } catch (Exception e) {
+            String msg = "%s failed. error=%s".formatted(actionName, e.getMessage());
+            throw new IgdbApiException(msg, e);
         }
     }
 
