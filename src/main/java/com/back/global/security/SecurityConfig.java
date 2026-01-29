@@ -93,7 +93,7 @@ public class SecurityConfig {
                 // 리뷰 조회 (공개)
                 // ======================
                 .requestMatchers(HttpMethod.GET, "/api/v1/reviews").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/reviews/game/").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/reviews/game/**").permitAll()
 
                 // 그 외 /api/** 는 로그인 필요
                 .requestMatchers("/api/**").authenticated()
