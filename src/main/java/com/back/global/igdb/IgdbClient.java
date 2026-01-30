@@ -6,6 +6,7 @@ import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
 import com.back.global.igdb.dto.IgdbGenreDto;
 import com.back.global.igdb.exception.IgdbApiException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class IgdbClient {
         }
     }
 
-    // 예: 게임 검색
+    @CircuitBreaker(name = "igdb", fallbackMethod = "searchGamesFallback")
     public List<IgdbGameSummaryDto> searchGames(String keyword, int limit) {
         // IGDB Query Language (APICALYPSE)
         // search "elden ring"; fields id,name,summary,first_release_date,cover.url; limit 10;
@@ -59,7 +60,7 @@ public class IgdbClient {
         return res == null ? List.of() : List.of(res);
     }
 
-    // 게임 상세 가져오기(igdbId로)
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getGameDetailFallback")
     public IgdbGameDetailDto getGameDetail(long igdbId) {
         String body = """
             fields
@@ -78,7 +79,7 @@ public class IgdbClient {
         return firstOrNull(res);
     }
 
-    // 게임 이름 가져오기(igdbId로)
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getGameNameFallback")
     public IgdbGameNameDto getGameName(long igdbId) {
         String body = """
             fields
@@ -91,6 +92,7 @@ public class IgdbClient {
         return firstOrNull(res);
     }
 
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getVideoIdFallback")
     public IgdbVideoDto getVideoId(long igdbGameId) {
         String body = """
             fields
@@ -104,6 +106,7 @@ public class IgdbClient {
         return firstOrNull(res);
     }
 
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getSimilarGameIdsFallback")
     public List<Long> getSimilarGameIds(long igdbId) {
         String body = """
             fields
@@ -116,6 +119,7 @@ public class IgdbClient {
         return res[0].similar_games();
     }
 
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getSimilarGameBriefByIdFallback")
     public List<SimilarGameResponse> getSimilarGameBriefById(List<Long> ids) {
         List<Long> picked = ids.stream().limit(30).toList();
         if (picked.isEmpty()) return List.of();
@@ -139,7 +143,7 @@ public class IgdbClient {
         return out;
     }
 
-    // 인기 게임 목록 조회 (Popularity Primitives API)
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getPopularGameIdsFallback")
     public List<IgdbPopularityPrimitiveDto> getPopularGameIds(int limit) {
         String body = """
             fields game_id,value,popularity_type;
@@ -153,7 +157,7 @@ public class IgdbClient {
         return res == null ? List.of() : List.of(res);
     }
 
-    // 인기 게임 ID들로 게임 정보 조회 (name, cover)
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getGamesByIdsFallback")
     public List<IgdbPopularGameDto> getGamesByIds(List<Long> gameIds) {
         if (gameIds == null || gameIds.isEmpty()) return List.of();
 
@@ -168,6 +172,7 @@ public class IgdbClient {
         return res == null ? List.of() : List.of(res);
     }
 
+    @CircuitBreaker(name = "igdb", fallbackMethod = "fetchGamesByIdsFallback")
     public List<GameRow> fetchGamesByIds(List<Long> idsInOrder) {
         String idList = idsInOrder.stream().map(String::valueOf).collect(Collectors.joining(","));
 
@@ -182,7 +187,7 @@ public class IgdbClient {
         return games == null ? List.of() : List.of(games);
     }
 
-    // 특정 게임의 rating 정보 조회
+    @CircuitBreaker(name = "igdb", fallbackMethod = "getGameRatingFallback")
     public IgdbPopularGameDto getGameRating(long igdbId) {
         String body = """                                                                                        
           fields id, name, cover.image_id, total_rating, total_rating_count;
@@ -228,6 +233,64 @@ public class IgdbClient {
         return s.replace("\"", "\\\"");
     }
 
+    // ── Circuit Breaker Fallback Methods ──
+
+    private List<IgdbGameSummaryDto> searchGamesFallback(String keyword, int limit, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – searchGames fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    private IgdbGameDetailDto getGameDetailFallback(long igdbId, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getGameDetail fallback, cause: {}", t.getMessage());
+        return null;
+    }
+
+    private IgdbGameNameDto getGameNameFallback(long igdbId, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getGameName fallback, cause: {}", t.getMessage());
+        return null;
+    }
+
+    private IgdbVideoDto getVideoIdFallback(long igdbGameId, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getVideoId fallback, cause: {}", t.getMessage());
+        return null;
+    }
+
+    private List<Long> getSimilarGameIdsFallback(long igdbId, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getSimilarGameIds fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    private List<SimilarGameResponse> getSimilarGameBriefByIdFallback(List<Long> ids, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getSimilarGameBriefById fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    private List<IgdbPopularityPrimitiveDto> getPopularGameIdsFallback(int limit, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getPopularGameIds fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    private List<IgdbPopularGameDto> getGamesByIdsFallback(List<Long> gameIds, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getGamesByIds fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    private List<GameRow> fetchGamesByIdsFallback(List<Long> idsInOrder, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – fetchGamesByIds fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    private IgdbPopularGameDto getGameRatingFallback(long igdbId, Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – getGameRating fallback, cause: {}", t.getMessage());
+        return null;
+    }
+
+    private List<IgdbGenreDto> fetchGenresFallback(Throwable t) {
+        log.warn("IGDB Circuit Breaker OPEN – fetchGenres fallback, cause: {}", t.getMessage());
+        return List.of();
+    }
+
+    @CircuitBreaker(name = "igdb", fallbackMethod = "fetchGenresFallback")
     public List<IgdbGenreDto> fetchGenres() {
         String body = """
         fields id,name;
