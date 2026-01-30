@@ -3,7 +3,7 @@ package com.back.domain.tag.tag.service;
 import com.back.domain.tag.tag.entity.Tag;
 import com.back.domain.tag.tag.repository.TagRepository;
 import com.back.global.exception.ServiceException;
-import com.back.global.igdb.IgdbClient;
+import com.back.global.igdb.IgdbCircuitBreakerClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.dto.IgdbGenreDto;
@@ -20,7 +20,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TagService {
     private final TagRepository tagRepository;
-    private final IgdbClient igdbClient;
+    private final IgdbCircuitBreakerClient igdbClient;
 
     @Transactional
     public Tag create(String content) {

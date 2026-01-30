@@ -6,7 +6,7 @@ import com.back.domain.game.game.repository.GameRepository;
 import com.back.domain.game.game.entity.*;
 import com.back.domain.game.game.repository.*;
 import com.back.global.exception.ServiceException;
-import com.back.global.igdb.IgdbClient;
+import com.back.global.igdb.IgdbCircuitBreakerClient;
 import com.back.global.igdb.dto.*;
 import com.back.global.igdb.service.IgdbPopularRightNowService;
 import jakarta.annotation.PreDestroy;
@@ -37,7 +37,7 @@ public class GameService {
     private final PlatformRepository platformRepository;
     private final GameGenreRepository gameGenreRepository;
     private final GamePlatformRepository gamePlatformRepository;
-    private final IgdbClient igdbClient;
+    private final IgdbCircuitBreakerClient igdbClient;
     private final IgdbPopularRightNowService igdbPopularRightNowService;
     private final GameCacheService gameCacheService;
 

@@ -1,7 +1,7 @@
 package com.back.global.igdb.service;
 
 import com.back.domain.game.game.dto.GameSearchCondition;
-import com.back.global.igdb.IgdbClient;
+import com.back.global.igdb.IgdbCircuitBreakerClient;
 import com.back.global.igdb.IgdbProperties;
 import com.back.global.igdb.TwitchTokenService;
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
@@ -35,7 +35,7 @@ public class IgdbService {
     private final RestTemplate restTemplate;
     private final TwitchTokenService twitchTokenService;
     private final IgdbProperties props;
-    private final IgdbClient igdbClient;
+    private final IgdbCircuitBreakerClient igdbClient;
 
     public List<IgdbGameSummaryDto> search(GameSearchCondition condition) {
 

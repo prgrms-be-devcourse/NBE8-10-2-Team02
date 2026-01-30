@@ -1,6 +1,6 @@
 package com.back.global.igdb.service;
 
-import com.back.global.igdb.IgdbClient;
+import com.back.global.igdb.IgdbCircuitBreakerClient;
 import com.back.global.igdb.IgdbProperties;
 import com.back.global.igdb.TwitchTokenService;
 import com.back.global.igdb.dto.*;
@@ -29,7 +29,7 @@ public class IgdbPopularRightNowService {
     private static final int TYPE_TWITCH_24H_WATCHED = 34;
 
     private final RestClient igdbRestClient;
-    private final IgdbClient igdbClient;
+    private final IgdbCircuitBreakerClient igdbClient;
     private final IgdbProperties props;
     private final TwitchTokenService tokenService;
 
