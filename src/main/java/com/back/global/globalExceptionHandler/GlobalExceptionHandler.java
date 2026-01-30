@@ -3,6 +3,8 @@ package com.back.global.globalExceptionHandler;
 import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,33 +24,42 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<RsData<Void>> handle(NoSuchElementException ex) {
         return new ResponseEntity<>(
-                new RsData<>(
-                        "404-1",
-                        "해당 데이터가 존재하지 않습니다."
-                ),
+                new RsData<>("404-1", "해당 데이터가 존재하지 않습니다."),
                 NOT_FOUND
         );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<RsData<Void>> handle(MethodArgumentNotValidException ex) {
+
         String message = ex.getBindingResult()
-                .getAllErrors()
+                .getFieldErrors()
                 .stream()
-                .filter(error -> error instanceof FieldError)
-                .map(error -> (FieldError) error)
-                .map(error -> error.getField() + "-" + error.getCode() + "-" + error.getDefaultMessage())
-                .sorted(Comparator.comparing(String::toString))
+                .sorted(Comparator.comparing(FieldError::getField))
+                .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("\n"));
 
         return new ResponseEntity<>(
-                new RsData<>(
-                        "400-1",
-                        message
-                ),
+                new RsData<>("400-1", message),
+                BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<RsData<Void>> handle(ConstraintViolationException ex) {
+
+        String message = ex.getConstraintViolations()
+                .stream()
+                .sorted(Comparator.comparing(v -> v.getPropertyPath().toString()))
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("\n"));
+
+        return new ResponseEntity<>(
+                new RsData<>("400-1", message),
                 BAD_REQUEST
         );
     }
@@ -56,10 +67,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<RsData<Void>> handle(HttpMessageNotReadableException ex) {
         return new ResponseEntity<>(
-                new RsData<>(
-                        "400-1",
-                        "요청 본문이 올바르지 않습니다."
-                ),
+                new RsData<>("400-1", "요청 본문이 올바르지 않습니다."),
                 BAD_REQUEST
         );
     }
@@ -67,14 +75,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<RsData<Void>> handle(MissingRequestHeaderException ex) {
         return new ResponseEntity<>(
-                new RsData<>(
-                        "400-1",
-                        "%s-%s-%s".formatted(
-                                ex.getHeaderName(),
-                                "NotBlank",
-                                ex.getLocalizedMessage()
-                        )
-                ),
+                new RsData<>("400-1", "필수 헤더가 누락되었습니다: " + ex.getHeaderName()),
                 BAD_REQUEST
         );
     }
@@ -82,9 +83,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceException.class)
     public RsData<Void> handle(ServiceException ex, HttpServletResponse response) {
         RsData<Void> rsData = ex.getRsData();
-
         response.setStatus(rsData.statusCode());
-
         return rsData;
     }
 }
