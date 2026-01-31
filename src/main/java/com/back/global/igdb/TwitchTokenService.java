@@ -1,6 +1,8 @@
 package com.back.global.igdb;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -9,6 +11,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TwitchTokenService {
@@ -17,6 +20,15 @@ public class TwitchTokenService {
     private final IgdbProperties props;
 
     private final AtomicReference<CachedToken> cache = new AtomicReference<>();
+
+    @PostConstruct
+    public void warmUpToken() {
+        try {
+            getAccessToken();
+        } catch (Exception e) {
+            log.warn("Twitch token warm-up failed", e);
+        }
+    }
 
     public String getAccessToken() {
         CachedToken current = cache.get();

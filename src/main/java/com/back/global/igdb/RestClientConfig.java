@@ -16,7 +16,7 @@ public class RestClientConfig {
 
     @Bean
     public RestClient igdbRestClient(RestClient.Builder builder, IgdbProperties props,
-                                      IgdbRetryInterceptor igdbRetryInterceptor) {
+                                      IgdbRateLimitInterceptor igdbRetryInterceptor) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .build();
