@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
+ * Service → IgdbCircuitBreakerClient → IgdbClient → IGDB API
+ *           (서킷브레이커 + fallback)    (순수 HTTP)
  * IgdbClient를 감싸는 Circuit Breaker 래퍼.
  * IGDB 장애 시 빠른 실패 처리(fallback)를 담당한다.
  */

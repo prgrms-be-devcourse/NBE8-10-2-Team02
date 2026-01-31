@@ -82,6 +82,9 @@ dependencies {
 	implementation("io.github.resilience4j:resilience4j-spring-boot3:2.3.0")
 	implementation("org.aspectj:aspectjweaver")
 
+	//Spring Retry
+	implementation("org.springframework.retry:spring-retry:2.0.11")
+
 }
 
 tasks.withType<Test> {

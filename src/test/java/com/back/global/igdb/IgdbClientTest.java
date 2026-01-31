@@ -1,10 +1,10 @@
 package com.back.global.igdb;
 
 
+import com.back.global.exception.IgdbRetryableException;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.dto.IgdbInvolvedCompanyDto;
 import com.back.global.igdb.dto.IgdbVideoDto;
-import com.back.global.igdb.exception.IgdbApiException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -49,7 +49,8 @@ public class IgdbClientTest {
         when(props.clientId()).thenReturn("test-client-id");
         when(tokenService.getAccessToken()).thenReturn("test-access-token");
 
-        igdbClient = new IgdbClient(restClient, props, tokenService);
+        IgdbRequestExecutor requestExecutor = new IgdbRequestExecutor(restClient, props, tokenService);
+        igdbClient = new IgdbClient(requestExecutor);
     }
 
     @AfterEach
@@ -153,7 +154,7 @@ public class IgdbClientTest {
                 .setBody("Internal Server Error"));
 
         assertThatThrownBy(() -> igdbClient.getGameDetail(1L))
-                .isInstanceOf(IgdbApiException.class);
+                .isInstanceOf(IgdbRetryableException.class);
     }
 
     @Test

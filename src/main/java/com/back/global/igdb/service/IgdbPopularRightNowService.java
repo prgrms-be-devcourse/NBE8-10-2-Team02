@@ -1,15 +1,11 @@
 package com.back.global.igdb.service;
 
 import com.back.global.igdb.IgdbCircuitBreakerClient;
-import com.back.global.igdb.IgdbProperties;
-import com.back.global.igdb.TwitchTokenService;
+import com.back.global.igdb.IgdbRequestExecutor;
 import com.back.global.igdb.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -28,10 +24,8 @@ public class IgdbPopularRightNowService {
     private static final int TYPE_WANT = 2;
     private static final int TYPE_TWITCH_24H_WATCHED = 34;
 
-    private final RestClient igdbRestClient;
     private final IgdbCircuitBreakerClient igdbClient;
-    private final IgdbProperties props;
-    private final TwitchTokenService tokenService;
+    private final IgdbRequestExecutor requestExecutor;
 
     private final ObjectMapper objectMapper;
 
@@ -137,33 +131,20 @@ public class IgdbPopularRightNowService {
                 TYPE_TWITCH_24H_WATCHED, limitPerType
         );
 
-        try {
-            JsonNode raw = igdbRestClient.post()
-                    .uri("/multiquery")
-                    .contentType(MediaType.TEXT_PLAIN)
-                    .header("Client-ID", props.clientId())
-                    .header("Authorization", "Bearer " + tokenService.getAccessToken())
-                    .body(body)
-                    .retrieve()
-                    .body(JsonNode.class);
+        JsonNode raw = requestExecutor.execute(body, JsonNode.class, "/multiquery", "fetchPrimitivesViaMultiquery");
 
-            if (raw == null || !raw.isArray()) return new PopularityLists(List.of(), List.of(), List.of());
+        if (raw == null || !raw.isArray()) return new PopularityLists(List.of(), List.of(), List.of());
 
-            // IGDB multiquery response: [{ "name": "...", "result": [ ... ] }, ...]
-            List<MultiQueryBlock> blocks = objectMapper.convertValue(
-                    raw, new TypeReference<List<MultiQueryBlock>>() {
-                    }
-            );
+        List<MultiQueryBlock> blocks = objectMapper.convertValue(
+                raw, new TypeReference<List<MultiQueryBlock>>() {
+                }
+        );
 
-            List<PopularityPrimitiveRow> visits = extractBlock(blocks, "visits");
-            List<PopularityPrimitiveRow> want = extractBlock(blocks, "want");
-            List<PopularityPrimitiveRow> twitch = extractBlock(blocks, "twitch");
+        List<PopularityPrimitiveRow> visits = extractBlock(blocks, "visits");
+        List<PopularityPrimitiveRow> want = extractBlock(blocks, "want");
+        List<PopularityPrimitiveRow> twitch = extractBlock(blocks, "twitch");
 
-            return new PopularityLists(visits, want, twitch);
-        } catch (RestClientResponseException e) {
-            // You might want to wrap into your ServiceException
-            throw new RuntimeException("IGDB multiquery failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString(), e);
-        }
+        return new PopularityLists(visits, want, twitch);
     }
 
     private List<PopularityPrimitiveRow> extractBlock(List<MultiQueryBlock> blocks, String name) {
