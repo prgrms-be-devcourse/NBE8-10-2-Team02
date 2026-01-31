@@ -43,8 +43,6 @@ public class IgdbService {
         List<Long> genreIds = condition.getGenreIds();
         List<Long> platformIds = condition.getPlatformIgdbIds();
 
-
-
         int size = condition.getSize() != null ? condition.getSize() : 20;
         int page = condition.getPage() != null ? condition.getPage() : 1;
         int offset = (page - 1) * size;

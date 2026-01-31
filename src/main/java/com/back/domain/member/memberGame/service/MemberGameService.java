@@ -1,6 +1,7 @@
 package com.back.domain.member.memberGame.service;
 
 import com.back.domain.game.game.entity.Game;
+import com.back.domain.game.platform.PlatformGroup;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
 import com.back.domain.member.memberGame.StatusEnum;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,13 +26,18 @@ public class MemberGameService {
     private final MemberRepository memberRepository;
     private final MemberGameRepository memberGameRepository;
 
-    public MemberGame addToLibrary(String platform, double playtime, boolean isFavorite, StatusEnum status, Member member, Game game) {
+    public MemberGame addToLibrary(String platformGroupName, double playtime, boolean isFavorite, StatusEnum status, Member member, Game game) {
         // Check for duplicate game in library
         Optional<MemberGame> existingGame = memberGameRepository.findByMemberIdAndGameId(member.getId(), game.getId());
         if (existingGame.isPresent()) {
             throw new ServiceException("400-2", "이미 라이브러리에 존재하는 게임입니다.");
         }
-        return member.addMemberGame(platform, playtime, isFavorite, status, game);
+        // Convert platform group name to platformId
+        Long platformId = PlatformGroup.getDefaultPlatformId(platformGroupName);
+        if (platformId == null) {
+            throw new ServiceException("400-3", "유효하지 않은 플랫폼입니다: " + platformGroupName);
+        }
+        return member.addMemberGame(platformId, playtime, isFavorite, status, game);
     }
 
     public boolean removeFromLibrary(Member member, int id) {
@@ -46,13 +53,15 @@ public class MemberGameService {
         return memberGameRepository.findByMemberId(memberId, pageable);
     }
 
-    public Page<MemberGame> findByMemberIdWithFilters(int memberId, StatusEnum status, String platform, Pageable pageable) {
-        if (status != null && platform != null) {
-            return memberGameRepository.findByMemberIdAndStatusAndPlatform(memberId, status, platform, pageable);
+    public Page<MemberGame> findByMemberIdWithFilters(int memberId, StatusEnum status, String platformGroupName, Pageable pageable) {
+        List<Long> platformIds = platformGroupName != null ? PlatformGroup.getPlatformIds(platformGroupName) : null;
+
+        if (status != null && platformIds != null && !platformIds.isEmpty()) {
+            return memberGameRepository.findByMemberIdAndStatusAndPlatformIdIn(memberId, status, platformIds, pageable);
         } else if (status != null) {
             return memberGameRepository.findByMemberIdAndStatus(memberId, status, pageable);
-        } else if (platform != null) {
-            return memberGameRepository.findByMemberIdAndPlatform(memberId, platform, pageable);
+        } else if (platformIds != null && !platformIds.isEmpty()) {
+            return memberGameRepository.findByMemberIdAndPlatformIdIn(memberId, platformIds, pageable);
         } else {
             return memberGameRepository.findByMemberId(memberId, pageable);
         }
@@ -69,7 +78,7 @@ public class MemberGameService {
         if (request.status() != null) memberGame.setStatus(request.status());
         if (request.playtime() != null) memberGame.setPlaytime(request.playtime());
         if (request.isFavorite() != null) memberGame.setFavorite(request.isFavorite());
-        if (request.platform() != null) memberGame.setPlatform(request.platform());
+        if (request.platform() != null) memberGame.setPlatformByGroupName(request.platform());
         return memberGame;
     }
 

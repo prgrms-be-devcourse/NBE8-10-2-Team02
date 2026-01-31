@@ -1,6 +1,7 @@
 package com.back.domain.member.memberGame.entity;
 
 import com.back.domain.game.game.entity.Game;
+import com.back.domain.game.platform.PlatformGroup;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.memberGame.StatusEnum;
 import com.back.domain.review.entity.Review;
@@ -17,7 +18,7 @@ import static jakarta.persistence.FetchType.*;
 @NoArgsConstructor
 public class MemberGame extends BaseEntity {
 
-    private String platform;
+    private Long platformId;
     private double playtime;
     private boolean isFavorite;
 
@@ -33,8 +34,8 @@ public class MemberGame extends BaseEntity {
     @OneToOne(fetch = LAZY)
     private Review review;
 
-    public MemberGame(String platform, double playtime, boolean isFavorite, StatusEnum status, Member member, Game game) {
-        this.platform = platform;
+    public MemberGame(Long platformId, double playtime, boolean isFavorite, StatusEnum status, Member member, Game game) {
+        this.platformId = platformId;
         this.playtime = playtime;
         this.isFavorite = isFavorite;
         this.status = status;
@@ -42,14 +43,28 @@ public class MemberGame extends BaseEntity {
         this.game = game;
         this.review = null;
     }
+
+    /**
+     * Get the platform group name for display (e.g., "PC", "PS")
+     */
+    public String getPlatformGroupName() {
+        return PlatformGroup.getGroupName(platformId);
+    }
     public void checkActorCanAccess(Member actor) {
         if (!member.equals(actor))
             throw new ServiceException("403-1", "%d번 게임에 대한 권한이 없습니다.".formatted(getId()));
     }
 
     // Specific setters for mutable fields only
-    public void setPlatform(String platform) {
-        this.platform = platform;
+    public void setPlatformId(Long platformId) {
+        this.platformId = platformId;
+    }
+
+    /**
+     * Set platformId from group name (e.g., "PC" -> 6L)
+     */
+    public void setPlatformByGroupName(String groupName) {
+        this.platformId = PlatformGroup.getDefaultPlatformId(groupName);
     }
 
     public void setPlaytime(double playtime) {
