@@ -66,6 +66,11 @@ public class IgdbSyncJobConfig {
                 .build();
     }
 
+    /**
+     * 빨간줄은 Spring Batch 6.0 정식 릴리즈 전까지는 대체 API가 아직 안정화되지 않았기 때문에, 지금은 그대로 두는 게 낫다.
+     * 신경 쓰이면 IDE 설정에서 deprecated warning 수준을 낮출 수 있다.
+     * IntelliJ: Settings > Editor > Inspections > Java > Deprecated API usage → Warning으로 변경
+     */
     @Bean
     public Step gameSyncStep() {
         return new StepBuilder("gameSyncStep", jobRepository)
