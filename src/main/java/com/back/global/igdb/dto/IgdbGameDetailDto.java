@@ -14,7 +14,6 @@ public record IgdbGameDetailDto(
         @JsonProperty("involved_companies")
         List<IgdbInvolvedCompanyDto> involvedCompanies,
         List<IgdbGenreDto> genres,
-//        List<IgdbKeywordDto> themes,
         List<IgdbPlatformDto> platforms
 ) {
 

@@ -9,13 +9,18 @@ spring:
   datasource:
     hikari:
       auto-commit: false
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
   jackson:
     serialization:
       fail-on-empty-beans: false
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true

@@ -48,20 +48,6 @@ public class ApiV1GameController {
     public List<SimilarGameResponse> getSimilarGames(@PathVariable long igdbId) {
         return gameService.getSimilarGames(igdbId);
     }
-//---------------------------------------------------
-
-    /*@GetMapping("/games/popular")
-    @Operation(summary = "인기 게임 조회 (자체 서비스)", description = "DB 또는 IGDB+DB 하이브리드 인기 순위")
-    public List<PopularGameResponse> getPopularGames(
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "hybrid") String source  // "db", "hybrid"
-    ) {
-        return switch (source) {
-            case "db" -> gameService.getPopularGames(limit);
-            case "hybrid" -> gameService.getPopularGamesHybrid(limit);
-            default -> gameService.getPopularGamesHybrid(limit);
-        };
-    }*/
 
     @GetMapping("/games/popular/igdb")
     @Operation(summary = "IGDB 인기 게임 조회", description = "IGDB Popular Right Now (Visits + Want + Twitch 가중치 조합)")

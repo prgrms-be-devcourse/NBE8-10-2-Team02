@@ -166,10 +166,39 @@ public class IgdbClient {
         return firstOrNull(res);
     }
 
+    public List<IgdbGameDetailDto> fetchGamePage(int offset, int limit) {
+        String body = """
+                fields id,name,summary,first_release_date,
+                    involved_companies.company.name,
+                    involved_companies.publisher,
+                    involved_companies.developer,
+                    cover.id,cover.image_id,
+                    genres.id,genres.name,
+                    platforms.id,platforms.name,
+                    total_rating,total_rating_count;
+                sort id asc;
+                offset %d;
+                limit %d;
+                """.formatted(offset, limit);
+
+        IgdbGameDetailDto[] res = requestExecutor.execute(body, IgdbGameDetailDto[].class, GAMES_ENDPOINT, "fetchGamePage");
+        return res == null ? List.of() : List.of(res);
+    }
+
+    public List<IgdbPlatformDto> fetchPlatforms() {
+        String body = """
+                fields id,name;
+                limit 500;
+                """;
+
+        IgdbPlatformDto[] res = requestExecutor.execute(body, IgdbPlatformDto[].class, "/platforms", "fetchPlatforms");
+        return res == null ? List.of() : List.of(res);
+    }
+
     public List<IgdbGenreDto> fetchGenres() {
         String body = """
         fields id,name;
-        limit 100;
+        limit 500;
         """;
 
         IgdbGenreDto[] res = requestExecutor.execute(body, IgdbGenreDto[].class, "/genres", "fetchGenres");

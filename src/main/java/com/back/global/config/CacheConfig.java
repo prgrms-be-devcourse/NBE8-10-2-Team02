@@ -2,7 +2,6 @@ package com.back.global.config;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
-import com.back.domain.game.game.dto.PopularGameResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
 import com.back.global.igdb.dto.PopularGameCardDto;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -45,14 +44,6 @@ public class CacheConfig {
         return Caffeine.newBuilder()
                 .maximumSize(20_000)
                 .expireAfterWrite(Duration.ofHours(24))
-                .build();
-    }
-
-    @Bean
-    public Cache<String, List<PopularGameResponse>> popularGamesCache() {
-        return Caffeine.newBuilder()
-                .maximumSize(50)
-                .expireAfterWrite(Duration.ofMinutes(10))  // 10분마다 갱신
                 .build();
     }
 

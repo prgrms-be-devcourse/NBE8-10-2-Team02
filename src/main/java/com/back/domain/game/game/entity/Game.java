@@ -54,9 +54,6 @@ public class Game extends BaseEntity {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GamePlatform> gamePlatforms = new ArrayList<>();
   
-    private Double igdbRating;
-    private Integer igdbRatingCount;
-
     private long viewCount = 0;
     private long likeCount = 0;
     private long reviewCount = 0;
@@ -134,11 +131,6 @@ public class Game extends BaseEntity {
 
     public void decrementReviewCount() {
         if (this.reviewCount > 0) this.reviewCount--;
-    }
-
-    public void updateIgdbRating(Double rating, Integer ratingCount) {
-        this.igdbRating = rating;
-        this.igdbRatingCount = ratingCount;
     }
 
     public void addPlatform(Platform platform) {

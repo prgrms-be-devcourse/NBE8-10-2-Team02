@@ -2,7 +2,6 @@ package com.back.domain.game.game.service;
 
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
-import com.back.domain.game.game.dto.PopularGameResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
 import com.back.global.igdb.dto.PopularGameCardDto;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -21,7 +20,6 @@ public class GameCacheService {
     private final Cache<Long, GameVideoResponse> videoIdCache;
     private final Cache<Long, List<Long>> similarIdsCache;
     private final Cache<Long, List<SimilarGameResponse>> similarListCache;
-    private final Cache<String, List<PopularGameResponse>> popularGamesCache;
     private final Cache<String, List<PopularGameCardDto>> igdbPopularGamesCache;
     private final Cache<Long, AtomicLong> viewCountCache;
 
@@ -55,14 +53,6 @@ public class GameCacheService {
     }
     public void putSimilarList(long igdbId, List<SimilarGameResponse> list) {
         similarListCache.put(igdbId, list);
-    }
-
-    // Popular Games
-    public List<PopularGameResponse> getPopularGames(String key) {
-        return popularGamesCache.getIfPresent(key);
-    }
-    public void putPopularGames(String key, List<PopularGameResponse> list) {
-        popularGamesCache.put(key, list);
     }
 
     // IGDB Popular Games
