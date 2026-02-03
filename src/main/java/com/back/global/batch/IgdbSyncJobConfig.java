@@ -87,7 +87,13 @@ public class IgdbSyncJobConfig {
     @Bean
     @StepScope // step 실행 시 마다 새 인스턴스가 생성됨, Reader는 offset을 0부터 시작하고 Processor는 최신 장르/플랫폼을 캐싱해야 하므로 매번 새로 만듦
     public IgdbGamePageReader igdbGamePageReader() {
-        return new IgdbGamePageReader(igdbClient);
+        // DB에 마지막 동기화 시점이 있으면 그 이후 변경분만 조회 (증분 동기화)
+        // 없으면 null → 전체 동기화 (최초 실행)
+        Long updatedAfterEpoch = gameRepository.findMaxLastFetchedAt()
+                .map(instant -> instant.getEpochSecond())
+                .orElse(null);
+
+        return new IgdbGamePageReader(igdbClient, updatedAfterEpoch);
     }
 
     @Bean

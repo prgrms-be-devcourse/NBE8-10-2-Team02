@@ -270,6 +270,40 @@ public class IgdbClientTest {
         assertThat(req.getHeader("Content-Type")).startsWith("text/plain");
     }
 
+    @Test
+    @DisplayName("fetchGamePage - updatedAfterEpoch 없으면 where절 없이 요청")
+    void t12_fetchGamePage_withoutFilter() throws Exception {
+        server.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .addHeader("Content-Type", "application/json")
+                .setBody("[]"));
+
+        igdbClient.fetchGamePage(0, 500, null);
+
+        RecordedRequest req = server.takeRequest();
+        String reqBody = req.getBody().readString(StandardCharsets.UTF_8);
+        assertThat(reqBody).doesNotContain("where updated_at");
+        assertThat(reqBody).contains("offset 0;");
+        assertThat(reqBody).contains("limit 500;");
+    }
+
+    @Test
+    @DisplayName("fetchGamePage - updatedAfterEpoch 있으면 where updated_at 조건 포함")
+    void t13_fetchGamePage_withFilter() throws Exception {
+        server.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .addHeader("Content-Type", "application/json")
+                .setBody("[]"));
+
+        igdbClient.fetchGamePage(0, 500, 1700000000L);
+
+        RecordedRequest req = server.takeRequest();
+        String reqBody = req.getBody().readString(StandardCharsets.UTF_8);
+        assertThat(reqBody).contains("where updated_at > 1700000000;");
+        assertThat(reqBody).contains("offset 0;");
+        assertThat(reqBody).contains("limit 500;");
+    }
+
     // 공통 요청 검증
     private void assertCommonRequest(RecordedRequest req, String path) {
         assertThat(req.getMethod()).isEqualTo("POST");
