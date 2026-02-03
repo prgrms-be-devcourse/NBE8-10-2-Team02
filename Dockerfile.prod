@@ -1,0 +1,11 @@
+# CI에서 이미 빌드된 JAR을 사용하는 경량 이미지
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# 빌드된 JAR 복사
+COPY build/libs/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=prod"]

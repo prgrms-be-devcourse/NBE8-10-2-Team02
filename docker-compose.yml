@@ -19,7 +19,7 @@ services:
       retries: 5
 
   app:
-    build: .
+    image: ghcr.io/prgrms-be-devcourse/nbe8-10-2-team02:latest
     container_name: back-app
     environment:
       SPRING_PROFILES_ACTIVE: prod
