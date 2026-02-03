@@ -2,7 +2,6 @@ package com.back.global.batch.reader;
 
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.ExecutionContext;
 import org.springframework.batch.infrastructure.item.ItemReader;
@@ -14,19 +13,29 @@ import java.util.List;
 import java.util.Queue;
 
 @Slf4j
-@RequiredArgsConstructor
 public class IgdbGamePageReader implements ItemReader<IgdbGameDetailDto>, ItemStream {
 
     private static final String OFFSET_KEY = "igdb.game.offset";
     private static final int PAGE_SIZE = 500;
 
     private final IgdbClient igdbClient;
+    private final Long updatedAfterEpoch;
 
     private int currentOffset = 0;
     private final Queue<IgdbGameDetailDto> buffer = new ArrayDeque<>();
-    private boolean exhausted = false; // 더이상 가져올 데이터가 없다는 플래그
+    private boolean exhausted = false;
 
-    // ExecutionContext에 저장된 offset이 있으면 복원. 이전 실행이 중간에 실패했을 때 처음부터 다시 안하고 이어갈 수 있음
+    public IgdbGamePageReader(IgdbClient igdbClient, Long updatedAfterEpoch) {
+        this.igdbClient = igdbClient;
+        this.updatedAfterEpoch = updatedAfterEpoch;
+
+        if (updatedAfterEpoch != null) {
+            log.info("증분 동기화 모드: updated_at > {} 이후 변경된 게임만 조회", updatedAfterEpoch);
+        } else {
+            log.info("전체 동기화 모드: 모든 게임 조회");
+        }
+    }
+
     @Override
     public void open(ExecutionContext executionContext) throws ItemStreamException {
         if (executionContext.containsKey(OFFSET_KEY)) {
@@ -35,13 +44,11 @@ public class IgdbGamePageReader implements ItemReader<IgdbGameDetailDto>, ItemSt
         }
     }
 
-    // 매 chunk 완료 시 Spring Batch가 호출. 현재 offset을 ExecutionContext에 저장
     @Override
     public void update(ExecutionContext executionContext) throws ItemStreamException {
         executionContext.putInt(OFFSET_KEY, currentOffset);
     }
 
-    // buffer 비우기
     @Override
     public void close() throws ItemStreamException {
         buffer.clear();
@@ -52,7 +59,7 @@ public class IgdbGamePageReader implements ItemReader<IgdbGameDetailDto>, ItemSt
      *       ├─ buffer에 데이터 있음? → buffer.poll()로 1건 반환
      *       ├─ buffer 비었는데 exhausted=true? → null 반환 (= Step 종료)
      *       └─ buffer 비었고 아직 데이터 남음?
-     *            ├─ igdbClient.fetchGamePage(offset, 500) 호출
+     *            ├─ igdbClient.fetchGamePage(offset, 500, updatedAfterEpoch) 호출
      *            ├─ 결과가 빈 리스트 → exhausted=true, null 반환
      *            ├─ 결과가 500건 미만 → 마지막 페이지이므로 exhausted=true
      *            ├─ buffer에 전부 담음
@@ -69,7 +76,7 @@ public class IgdbGamePageReader implements ItemReader<IgdbGameDetailDto>, ItemSt
             return null;
         }
 
-        List<IgdbGameDetailDto> page = igdbClient.fetchGamePage(currentOffset, PAGE_SIZE);
+        List<IgdbGameDetailDto> page = igdbClient.fetchGamePage(currentOffset, PAGE_SIZE, updatedAfterEpoch);
         log.info("IGDB 게임 페이지 조회: offset={}, 결과={}건", currentOffset, page.size());
 
         if (page.isEmpty()) {

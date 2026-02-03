@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +26,7 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
     @Modifying
     @Query("UPDATE Game g SET g.viewCount = g.viewCount + :delta WHERE g.igdbId = :igdbId")
     void incrementViewCount(@Param("igdbId") long igdbId, @Param("delta") long delta);
+
+    @Query("SELECT MAX(g.lastFetchedAt) FROM Game g")
+    Optional<Instant> findMaxLastFetchedAt();
 }

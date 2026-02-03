@@ -167,6 +167,14 @@ public class IgdbClient {
     }
 
     public List<IgdbGameDetailDto> fetchGamePage(int offset, int limit) {
+        return fetchGamePage(offset, limit, null);
+    }
+
+    public List<IgdbGameDetailDto> fetchGamePage(int offset, int limit, Long updatedAfterEpoch) {
+        String whereClause = updatedAfterEpoch != null
+                ? "where updated_at > %d;".formatted(updatedAfterEpoch)
+                : "";
+
         String body = """
                 fields id,name,summary,first_release_date,
                     involved_companies.company.name,
@@ -176,10 +184,11 @@ public class IgdbClient {
                     genres.id,genres.name,
                     platforms.id,platforms.name,
                     total_rating,total_rating_count;
+                %s
                 sort id asc;
                 offset %d;
                 limit %d;
-                """.formatted(offset, limit);
+                """.formatted(whereClause, offset, limit);
 
         IgdbGameDetailDto[] res = requestExecutor.execute(body, IgdbGameDetailDto[].class, GAMES_ENDPOINT, "fetchGamePage");
         return res == null ? List.of() : List.of(res);

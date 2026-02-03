@@ -39,19 +39,20 @@ public class BaseInitData {
         tryJoin("admin@test.com", "1234", "관리자");
         tryJoin("user1@test.com", "1234", "유저1");
         tryJoin("user2@test.com", "1234", "유저2");
-        try {
-            gameService.createGame(123L,
-                    "Cat Mario",
-                    "고양이 마리오 게임",
-                    "cat_mario.png",
-                    LocalDate.now());
-            gameService.createGame(124L,
-                    "Super Mario Bros.",
-                    "최초의 마리오 게임",
-                    "super_mario_bros.png",
-                    LocalDate.of(1985, 9,13));
-        } catch (Exception ignored) {
-        }
+        // 배치 동기화와 충돌 방지를 위해 주석 처리
+        // try {
+        //     gameService.createGame(123L,
+        //             "Cat Mario",
+        //             "고양이 마리오 게임",
+        //             "cat_mario.png",
+        //             LocalDate.now());
+        //     gameService.createGame(124L,
+        //             "Super Mario Bros.",
+        //             "최초의 마리오 게임",
+        //             "super_mario_bros.png",
+        //             LocalDate.of(1985, 9,13));
+        // } catch (Exception ignored) {
+        // }
 
     }
 

@@ -66,6 +66,11 @@ public class IgdbSyncJobConfig {
                 .build();
     }
 
+    /**
+     * 빨간줄은 Spring Batch 6.0 정식 릴리즈 전까지는 대체 API가 아직 안정화되지 않았기 때문에, 지금은 그대로 두는 게 낫다.
+     * 신경 쓰이면 IDE 설정에서 deprecated warning 수준을 낮출 수 있다.
+     * IntelliJ: Settings > Editor > Inspections > Java > Deprecated API usage → Warning으로 변경
+     */
     @Bean
     public Step gameSyncStep() {
         return new StepBuilder("gameSyncStep", jobRepository)
@@ -82,7 +87,13 @@ public class IgdbSyncJobConfig {
     @Bean
     @StepScope // step 실행 시 마다 새 인스턴스가 생성됨, Reader는 offset을 0부터 시작하고 Processor는 최신 장르/플랫폼을 캐싱해야 하므로 매번 새로 만듦
     public IgdbGamePageReader igdbGamePageReader() {
-        return new IgdbGamePageReader(igdbClient);
+        // DB에 마지막 동기화 시점이 있으면 그 이후 변경분만 조회 (증분 동기화)
+        // 없으면 null → 전체 동기화 (최초 실행)
+        Long updatedAfterEpoch = gameRepository.findMaxLastFetchedAt()
+                .map(instant -> instant.getEpochSecond())
+                .orElse(null);
+
+        return new IgdbGamePageReader(igdbClient, updatedAfterEpoch);
     }
 
     @Bean
