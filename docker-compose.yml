@@ -2,6 +2,12 @@ services:
   db:
     image: mysql:8.0
     container_name: back-db
+    command: >
+      --innodb-buffer-pool-size=128M
+      --max-connections=50
+      --key-buffer-size=16M
+      --tmp-table-size=16M
+      --max-heap-table-size=16M
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: back
@@ -17,6 +23,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 400M
 
   app:
     image: ghcr.io/prgrms-be-devcourse/nbe8-10-2-team02:latest
@@ -35,6 +45,10 @@ services:
       db:
         condition: service_healthy
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 volumes:
   db_data:
