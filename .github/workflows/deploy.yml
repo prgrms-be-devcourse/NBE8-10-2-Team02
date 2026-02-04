@@ -63,6 +63,9 @@ jobs:
           script: |
             cd ~/NBE8-10-2-Team02
 
+            # 최신 소스 pull (docker-compose.yml 등 반영, 일단 develop으로 해둠)
+            git pull origin develop
+
             # GitHub Container Registry 로그인
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
