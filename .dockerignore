@@ -1,5 +1,7 @@
-# Build outputs
+# Build outputs (JAR 파일은 제외)
 build/
+!build/libs/
+!build/libs/*.jar
 .gradle/
 
 # IDE
