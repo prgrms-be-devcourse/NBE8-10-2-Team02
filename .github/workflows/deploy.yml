@@ -74,3 +74,6 @@ jobs:
 
             # 새 이미지로 실행
             docker compose up -d
+
+            # Nginx 재시작 (HTTPS 리버스 프록시)
+            sudo systemctl reload nginx

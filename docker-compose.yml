@@ -40,7 +40,7 @@ services:
       IGDB_CLIENT_ID: ${IGDB_CLIENT_ID}
       IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
