@@ -25,7 +25,7 @@ public interface GameGenreRepository extends JpaRepository<GameGenre, Long> {
      * clearAutomatically = true : 영속성 컨텍스트를 비워서, 같은 트랜잭션에서 조회해도 예전 상태 조회가 안되도록 함
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = "INSERT IGNORE INTO game_genre(game_id, genre_id) VALUES (:gameId, :genreId)",
+    @Query(value = "INSERT INTO game_genre(game_id, genre_id) VALUES (:gameId, :genreId) ON CONFLICT DO NOTHING",
             nativeQuery = true)
     int insertIgnore(@Param("gameId") int gameId, @Param("genreId") long genreId);
 }
