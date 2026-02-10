@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface GameGenreRepository extends JpaRepository<GameGenre, Long> {
@@ -18,6 +19,10 @@ public interface GameGenreRepository extends JpaRepository<GameGenre, Long> {
         order by g.name
     """)
     List<String> findGenreNamesByGameId(@Param("gameId") int gameId);
+
+    @Modifying(flushAutomatically = true)
+    @Query("DELETE FROM GameGenre gg WHERE gg.game.id IN :gameIds")
+    void deleteByGameIdIn(@Param("gameIds") Collection<Integer> gameIds);
 
     /**
      * native insert를 해주면 1차 캐시를 업데이트 하지 않는다.

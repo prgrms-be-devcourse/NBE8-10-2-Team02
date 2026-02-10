@@ -1,18 +1,13 @@
 package com.back.domain.game.game.entity;
 
-import com.back.global.jpa.entity.BaseEntity;
 import com.back.standard.util.TimeUt;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import jakarta.persistence.Entity;
 import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -25,60 +20,65 @@ import java.util.List;
         indexes = @Index(name = "ix_game_name", columnList = "name")
 )
 @JsonIgnoreProperties({"hibernateLazyInitializer"})
-public class Game extends BaseEntity {
+public class Game {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "game_seq")
+    @SequenceGenerator(name = "game_seq", sequenceName = "game_id_seq", allocationSize = 50)
+    @Setter(AccessLevel.PROTECTED)
+    private int id;
     @Column(name = "igdb_id", nullable = false)
     private long igdbId;
 
     private String name;
 
-    @Column(nullable = false, length = 5000)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String summary;
 
-    @ElementCollection
-    @CollectionTable(name = "game_developer", joinColumns = @JoinColumn(name = "game_id"))
-    @Column(name = "name", nullable = false)
-    private List<String> developers = new ArrayList<>();
+    @Column(columnDefinition = "TEXT")
+    private String storyline;
 
-    @ElementCollection
-    @CollectionTable(name = "game_publisher", joinColumns = @JoinColumn(name = "game_id"))
-    @Column(name = "name", nullable = false)
-    private List<String> publishers = new ArrayList<>();
+    private Double aggregatedRating;
+
+    private Long franchiseIgdbId;
+
+    private String franchiseName;
 
     private String coverImageId;
     private LocalDate firstReleaseDate;
     private Instant lastFetchedAt;
 
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GameGenre> gameGenres = new ArrayList<>();
-  
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GamePlatform> gamePlatforms = new ArrayList<>();
-  
     private long viewCount = 0;
     private long likeCount = 0;
     private long reviewCount = 0;
-  
+
 
     public static Game createGame(
             long igdbId,
             String name,
             String summary,
-            List<String> developers,
-            List<String> publishers,
             String imageId,
-            Long firstReleaseDate
+            Long firstReleaseDate,
+            String storyline,
+            Double aggregatedRating,
+            Long franchiseIgdbId,
+            String franchiseName
     ) {
         Game g = new Game();
         g.igdbId = igdbId;
         g.name = name;
         g.summary = summary;
-        g.updateCompanies(developers, publishers);
         g.coverImageId = imageId;
         g.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDate);
         g.lastFetchedAt = Instant.now();
+        g.storyline = storyline;
+        g.aggregatedRating = aggregatedRating;
+        g.franchiseIgdbId = franchiseIgdbId;
+        g.franchiseName = franchiseName;
 
         return g;
     }
+
     public static Game createGame(
             long igdbId,
             String name,
@@ -105,12 +105,17 @@ public class Game extends BaseEntity {
         this.lastFetchedAt = Instant.now();
     }
 
-    public void updateCompanies(List<String> developers, List<String> publishers) {
-        this.developers.clear();
-        this.publishers.clear();
-
-        if (developers != null) this.developers.addAll(developers);
-        if (developers != null) this.publishers.addAll(publishers);
+    public void updateDetail(String name, String summary, String coverImageId, Long firstReleaseDateEpochSecond,
+                             String storyline, Double aggregatedRating, Long franchiseIgdbId, String franchiseName) {
+        this.name = name;
+        this.summary = summary;
+        this.coverImageId = coverImageId;
+        this.firstReleaseDate = TimeUt.epoch.toLocalDate(firstReleaseDateEpochSecond);
+        this.lastFetchedAt = Instant.now();
+        this.storyline = storyline;
+        this.aggregatedRating = aggregatedRating;
+        this.franchiseIgdbId = franchiseIgdbId;
+        this.franchiseName = franchiseName;
     }
 
     public void incrementViewCount() {
@@ -133,17 +138,16 @@ public class Game extends BaseEntity {
         if (this.reviewCount > 0) this.reviewCount--;
     }
 
-    public void addPlatform(Platform platform) {
-        GamePlatform gp = GamePlatform.createGamePlatform(this, platform);
-        this.gamePlatforms.add(gp);
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Game that = (Game) o;
+        return id == that.id;
     }
 
-    public void addGenre(Genre genre) {
-        GameGenre gg = GameGenre.createGameGenre(this, genre);
-        this.gameGenres.add(gg);
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
-
-
-
-
 }

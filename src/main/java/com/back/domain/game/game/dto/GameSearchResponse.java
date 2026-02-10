@@ -1,7 +1,6 @@
 package com.back.domain.game.game.dto;
 
 import com.back.global.igdb.dto.IgdbGameSummaryDto;
-import com.back.domain.game.game.entity.Game;
 import com.back.global.igdb.dto.IgdbPlatformDto;
 import com.back.standard.util.TimeUt;
 
@@ -51,27 +50,4 @@ public record GameSearchResponse(
                         .toList()
         );
     }
-
-//    DB 조회용
-    public static GameSearchResponse from(Game game) {
-        return new GameSearchResponse(
-                game.getIgdbId(),
-                game.getName(),
-
-                IgdbImageUtil.cover(game.getCoverImageId()),
-
-                game.getFirstReleaseDate(),
-                game.getGameGenres() == null ? List.of()
-                        : game.getGameGenres().stream()
-                        .map(gg -> gg.getGenre().getName())
-                        .toList(),
-
-                game.getGamePlatforms() == null ? List.of()
-                        : game.getGamePlatforms().stream()
-                        .map(gp -> gp.getPlatform().getName())
-                        .toList()
-        );
-    }
-
-
 }

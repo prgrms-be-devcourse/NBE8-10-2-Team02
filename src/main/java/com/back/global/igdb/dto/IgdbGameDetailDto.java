@@ -14,7 +14,19 @@ public record IgdbGameDetailDto(
         @JsonProperty("involved_companies")
         List<IgdbInvolvedCompanyDto> involvedCompanies,
         List<IgdbGenreDto> genres,
-        List<IgdbPlatformDto> platforms
+        List<IgdbPlatformDto> platforms,
+        String storyline,
+        List<IgdbThemeDto> themes,
+        List<IgdbKeywordDto> keywords,
+        @JsonProperty("game_modes")
+        List<IgdbGameModeDto> gameModes,
+        @JsonProperty("player_perspectives")
+        List<IgdbPlayerPerspectiveDto> playerPerspectives,
+        @JsonProperty("external_games")
+        List<IgdbExternalGameDto> externalGames,
+        List<IgdbFranchiseDto> franchises,
+        @JsonProperty("aggregated_rating")
+        Double aggregatedRating
 ) {
 
 }

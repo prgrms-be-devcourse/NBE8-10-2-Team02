@@ -23,7 +23,8 @@ import lombok.NoArgsConstructor;
 public class GamePlatform {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "game_platform_seq")
+    @SequenceGenerator(name = "game_platform_seq", sequenceName = "game_platform_id_seq", allocationSize = 50)
     private Long id;
 
 

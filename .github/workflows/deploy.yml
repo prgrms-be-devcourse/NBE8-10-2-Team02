@@ -46,6 +46,13 @@ jobs:
             ${{ env.DOCKER_IMAGE }}:latest
             ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
+      - name: Discord 알림 (빌드 실패)
+        if: failure()
+        run: |
+          curl -s -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"빌드 실패 ❌\",\"description\":\"**브랜치**: ${{ github.ref_name }}\\n**커밋**: ${{ github.sha }}\",\"color\":15158332}]}" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -80,3 +87,17 @@ jobs:
 
             # Nginx 재시작 (HTTPS 리버스 프록시)
             sudo systemctl reload nginx
+
+      - name: Discord 알림
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            COLOR=3066993
+            STATUS="성공 ✅"
+          else
+            COLOR=15158332
+            STATUS="실패 ❌"
+          fi
+          curl -s -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"배포 ${STATUS}\",\"description\":\"**브랜치**: ${{ github.ref_name }}\\n**커밋**: ${{ github.sha }}\",\"color\":${COLOR}}]}" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}

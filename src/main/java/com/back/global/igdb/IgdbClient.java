@@ -176,14 +176,19 @@ public class IgdbClient {
                 : "";
 
         String body = """
-                fields id,name,summary,first_release_date,
-                    involved_companies.company.name,
-                    involved_companies.publisher,
-                    involved_companies.developer,
+                fields id,name,summary,storyline,first_release_date,
+                    involved_companies.company.id,involved_companies.company.name,
+                    involved_companies.publisher,involved_companies.developer,
                     cover.id,cover.image_id,
                     genres.id,genres.name,
                     platforms.id,platforms.name,
-                    total_rating,total_rating_count;
+                    themes.id,themes.name,
+                    keywords.id,keywords.name,
+                    game_modes.id,game_modes.name,
+                    player_perspectives.id,player_perspectives.name,
+                    external_games.category,external_games.uid,
+                    franchises.id,franchises.name,
+                    aggregated_rating,total_rating,total_rating_count;
                 %s
                 sort id asc;
                 offset %d;
@@ -212,6 +217,67 @@ public class IgdbClient {
 
         IgdbGenreDto[] res = requestExecutor.execute(body, IgdbGenreDto[].class, "/genres", "fetchGenres");
         return res == null ? List.of() : List.of(res);
+    }
+
+    public List<IgdbThemeDto> fetchThemes() {
+        String body = """
+        fields id,name;
+        limit 500;
+        """;
+
+        IgdbThemeDto[] res = requestExecutor.execute(body, IgdbThemeDto[].class, "/themes", "fetchThemes");
+        return res == null ? List.of() : List.of(res);
+    }
+
+    public List<IgdbGameModeDto> fetchGameModes() {
+        String body = """
+        fields id,name;
+        limit 500;
+        """;
+
+        IgdbGameModeDto[] res = requestExecutor.execute(body, IgdbGameModeDto[].class, "/game_modes", "fetchGameModes");
+        return res == null ? List.of() : List.of(res);
+    }
+
+    public List<IgdbPlayerPerspectiveDto> fetchPlayerPerspectives() {
+        String body = """
+        fields id,name;
+        limit 500;
+        """;
+
+        IgdbPlayerPerspectiveDto[] res = requestExecutor.execute(body, IgdbPlayerPerspectiveDto[].class, "/player_perspectives", "fetchPlayerPerspectives");
+        return res == null ? List.of() : List.of(res);
+    }
+
+    public List<IgdbKeywordDto> fetchKeywords() {
+        return fetchAllPaged("/keywords", IgdbKeywordDto[].class, "fetchKeywords");
+    }
+
+    public List<IgdbCompanyDto> fetchCompanies() {
+        return fetchAllPaged("/companies", IgdbCompanyDto[].class, "fetchCompanies");
+    }
+
+    private <T> List<T> fetchAllPaged(String endpoint, Class<T[]> responseType, String operationName) {
+        List<T> all = new ArrayList<>();
+        int offset = 0;
+        int limit = 500;
+
+        while (true) {
+            String body = """
+                    fields id,name;
+                    sort id asc;
+                    offset %d;
+                    limit %d;
+                    """.formatted(offset, limit);
+
+            T[] res = requestExecutor.execute(body, responseType, endpoint, operationName);
+            if (res == null || res.length == 0) break;
+            all.addAll(List.of(res));
+            if (res.length < limit) break;
+            offset += limit;
+        }
+
+        return all;
     }
 
     private static <T> T firstOrNull(T[] arr) {

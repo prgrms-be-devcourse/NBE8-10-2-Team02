@@ -56,17 +56,17 @@ public class GameSearchRepositoryImpl implements GameSearchRepositoryCustom {
         var query = queryFactory
                 .selectDistinct(game)
                 .from(game)
-                .leftJoin(game.gameGenres, gameGenre);
+                .leftJoin(gameGenre).on(gameGenre.game.eq(game));
 
         if (hasPlatform) {
             // 플랫폼 필터 있을 때
-            query.join(game.gamePlatforms, gamePlatform);
+            query.join(gamePlatform).on(gamePlatform.game.eq(game));
             builder.and(
                     gamePlatform.platform.igdbId.in(condition.getPlatformIgdbIds())
             );
         } else {
             // 플랫폼 필터 없을 때
-            query.leftJoin(game.gamePlatforms, gamePlatform);
+            query.leftJoin(gamePlatform).on(gamePlatform.game.eq(game));
         }
 
 

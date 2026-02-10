@@ -25,3 +25,10 @@ jobs:
 
       - name: Build and Test
         run: ./gradlew build
+
+      - name: Discord 알림 (CI 실패)
+        if: failure()
+        run: |
+          curl -s -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"CI 빌드 실패 ❌\",\"description\":\"**브랜치**: ${{ github.head_ref }}\\n**PR**: ${{ github.event.pull_request.title }}\\n**커밋**: ${{ github.sha }}\",\"color\":15158332}]}" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}

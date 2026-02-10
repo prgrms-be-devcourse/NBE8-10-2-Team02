@@ -26,7 +26,15 @@ public class IgdbFixtures {
                 List.of(
                         new IgdbPlatformDto(10001L, "PC (Windows)"),
                         new IgdbPlatformDto(20001L, "PlayStation 5")
-                )
+                ),
+                null, // storyline
+                null, // themes
+                null, // keywords
+                null, // gameModes
+                null, // playerPerspectives
+                null, // externalGames
+                null, // franchises
+                null  // aggregatedRating
         );
     }
 }

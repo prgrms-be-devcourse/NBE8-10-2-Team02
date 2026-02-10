@@ -1,16 +1,18 @@
 spring:
   datasource:
-    url: jdbc:h2:./db_dev;MODE=PostgreSQL
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://localhost:5432/back
+    username: back
+    password: back1234
+    driver-class-name: org.postgresql.Driver
 
   jpa:
-    defer-datasource-initialization: true
-
-  sql:
-    init:
-      mode: always
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true

@@ -3,12 +3,11 @@ package com.back.domain.game.game.service;
 import com.back.domain.game.game.dto.GameDetailResponse;
 import com.back.domain.game.game.dto.GameVideoResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
-import com.back.domain.game.game.entity.Game;
+import com.back.domain.game.game.entity.*;
 import com.back.domain.game.game.repository.*;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbVideoDto;
-import com.back.support.IgdbFixtures;
 import com.github.benmanes.caffeine.cache.Cache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,9 +18,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Field;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +44,10 @@ class GameServiceTest {
     @Autowired
     GamePlatformRepository gamePlatformRepository;
     @Autowired
+    GameCompanyRepository gameCompanyRepository;
+    @Autowired
+    CompanyRepository companyRepository;
+    @Autowired
     Cache<Long, GameDetailResponse> gameDetailCache;
 
     @BeforeEach
@@ -56,11 +56,13 @@ class GameServiceTest {
     }
 
     @Test
-    @DisplayName("게임상세조회 - API 호출 후 DB 저장")
-    void t1_getGameDetail_apiCall_andPersist() {
+    @DisplayName("게임상세조회 - DB에서 조회 성공")
+    void t1_getGameDetail_fromDb() {
         //given
         long igdbId = 999L;
-        when(igdbClient.getGameDetail(igdbId)).thenReturn(IgdbFixtures.gameDetail(igdbId));
+        Game game = Game.createGame(igdbId, "Test Game 999", "summary-999",
+                "coverImage", 1700000000L, null, null, null, null);
+        gameRepository.save(game);
 
         //when
         GameDetailResponse result = gameService.getGameDetail(igdbId);
@@ -68,13 +70,7 @@ class GameServiceTest {
         //then
         assertThat(result).isNotNull();
         assertThat(result.gameName()).isEqualTo("Test Game 999");
-
-        // DB에 저장됐는지 확인
-        Game saved = gameRepository.findByIgdbId(igdbId).orElseThrow();
-        assertThat(saved.getName()).isEqualTo("Test Game 999");
-
-        // API는 1번만 호출됨
-        verify(igdbClient, times(1)).getGameDetail(igdbId);
+        verify(igdbClient, never()).getGameDetail(anyLong());
     }
 
     @Test
@@ -82,15 +78,16 @@ class GameServiceTest {
     void t2_getGameDetail_secondCall_fromCache() {
         //given
         long igdbId = 888L;
-        when(igdbClient.getGameDetail(igdbId)).thenReturn(IgdbFixtures.gameDetail(igdbId));
+        Game game = Game.createGame(igdbId, "Test Game 888", "summary-888",
+                "coverImage", 1700000000L, null, null, null, null);
+        gameRepository.save(game);
 
         //when
-        gameService.getGameDetail(igdbId); // 1차: API 호출
+        gameService.getGameDetail(igdbId); // 1차: DB 조회
         GameDetailResponse result = gameService.getGameDetail(igdbId); // 2차: 캐시
 
         //then
         assertThat(result.gameName()).isEqualTo("Test Game 888");
-        verify(igdbClient, times(1)).getGameDetail(igdbId); // API는 1번만
     }
 
     @Test
@@ -196,17 +193,10 @@ class GameServiceTest {
     void t9_getGameDetail_dbHit_noApiCall() {
         //given
         long igdbId = 1009L;
-        Game existingGame = Game.createGame(
-                igdbId,
-                "Existing Game",
-                "Already in DB",
-                List.of("Dev Studio"),
-                List.of("Publisher Inc"),
-                "existingCover",
-                1700000000L
-        );
-        gameRepository.save(existingGame); // DB에 해당 게임이 이미 있다고 가정
-        gameDetailCache.invalidate(igdbId); //캐시 비우기
+        Game existingGame = Game.createGame(igdbId, "Existing Game", "Already in DB",
+                "existingCover", 1700000000L, null, null, null, null);
+        gameRepository.save(existingGame);
+        gameDetailCache.invalidate(igdbId);
 
         //when
         GameDetailResponse result = gameService.getGameDetail(igdbId);
@@ -214,49 +204,14 @@ class GameServiceTest {
         //then
         assertThat(result).isNotNull();
         assertThat(result.gameName()).isEqualTo("Existing Game");
-
-        verify(igdbClient, never()).getGameDetail(igdbId); // api호출 없음
+        verify(igdbClient, never()).getGameDetail(igdbId);
     }
 
     @Test
-    @DisplayName("게임상세조회 - DB의 데이터가 stale이면 API 재호출")
-    void t10_getGameDetail_staleData_refetch() throws Exception {
-        //given DB에 8일 전 데이터 존재 (stale)
-        long igdbId = 1010L;
-        Game staleGame = Game.createGame(
-                igdbId,
-                "Stale Game",
-                "Old summary",
-                List.of("Old Dev"),
-                List.of("Old Publisher"),
-                "oldCover",
-                1700000000L
-        );
-        gameRepository.save(staleGame);
-
-        // lastFetchedAt을 8일 전으로 변경 (리플렉션)
-        Field lastFetchedAtField = Game.class.getDeclaredField("lastFetchedAt");
-        lastFetchedAtField.setAccessible(true);
-        lastFetchedAtField.set(staleGame, Instant.now().minus(8, ChronoUnit.DAYS));
-        gameRepository.save(staleGame);
-
-        gameDetailCache.invalidate(igdbId); //캐시 비우기
-        when(igdbClient.getGameDetail(igdbId)).thenReturn(IgdbFixtures.gameDetail(igdbId));
-
-        //when
-        GameDetailResponse result = gameService.getGameDetail(igdbId);
-
-        //then
-        assertThat(result.gameName()).isEqualTo("Test Game " + igdbId);
-        verify(igdbClient, times(1)).getGameDetail(igdbId);
-    }
-    
-    @Test
-    @DisplayName("게임상세조회 - API가 null 반환하면 예외 발생")
-    public void t11_getGameDetail_notFound_throwsException() {
+    @DisplayName("게임상세조회 - DB에 없으면 예외 발생")
+    void t10_getGameDetail_notFound_throwsException() {
         //given
         long igdbId = 1011L;
-        when(igdbClient.getGameDetail(igdbId)).thenReturn(null);
 
         //when, then
         assertThatThrownBy(() -> gameService.getGameDetail(igdbId))
@@ -266,57 +221,86 @@ class GameServiceTest {
 
     @Test
     @DisplayName("비디오 조회 - dto는 있지만 videoId가 null이면 빈 문자열 반환")
-    public void t12_getVideoId_videoIdNull_returnsEmpty() {
+    void t11_getVideoId_videoIdNull_returnsEmpty() {
         //given
         long igdbId = 1012L;
         when(igdbClient.getVideoId(igdbId)).thenReturn(new IgdbVideoDto(1001L, null));
-        
+
         //when
         GameVideoResponse result = gameService.getVideoId(igdbId);
 
         //then
         assertThat(result.videoId()).isEmpty();
     }
-    
+
     @Test
-    @DisplayName("게임상세조회 - Genre가 정상적으로 연결됨")
-    public void t13_getGameDetail_genresLinked() {
+    @DisplayName("게임상세조회 - Genre가 정상적으로 반환됨")
+    void t12_getGameDetail_genresReturned() {
         //given
         long igdbId = 1013L;
-        when(igdbClient.getGameDetail(igdbId)).thenReturn(IgdbFixtures.gameDetail(igdbId));
+        Game game = Game.createGame(igdbId, "Genre Game", "summary",
+                "cover", 1700000000L, null, null, null, null);
+        gameRepository.save(game);
+
+        Genre action = genreRepository.save(Genre.createGenre(10000L, "Action"));
+        Genre rpg = genreRepository.save(Genre.createGenre(10001L, "RPG"));
+        gameGenreRepository.save(GameGenre.createGameGenre(game, action));
+        gameGenreRepository.save(GameGenre.createGameGenre(game, rpg));
 
         //when
-        gameService.getGameDetail(igdbId);
-        
-        //then
-        Game savedGame = gameRepository.findByIgdbId(igdbId).orElseThrow();
-        List<String> linkedGenres = gameGenreRepository.findGenreNamesByGameId(savedGame.getId());
+        GameDetailResponse result = gameService.getGameDetail(igdbId);
 
-        assertThat(linkedGenres).containsExactlyInAnyOrder("Action", "RPG");
+        //then
+        assertThat(result.genres()).containsExactlyInAnyOrder("Action", "RPG");
     }
 
     @Test
-    @DisplayName("게임상세조회 - Platform이 정상적으로 연결됨")
-    void t14_getGameDetail_platformsLinked() {
+    @DisplayName("게임상세조회 - Platform이 정상적으로 반환됨")
+    void t13_getGameDetail_platformsReturned() {
         //given
         long igdbId = 1014L;
-        when(igdbClient.getGameDetail(igdbId)).thenReturn(IgdbFixtures.gameDetail(igdbId));
+        Game game = Game.createGame(igdbId, "Platform Game", "summary",
+                "cover", 1700000000L, null, null, null, null);
+        gameRepository.save(game);
+
+        Platform pc = platformRepository.save(Platform.createPlatform(10001L, "PC (Windows)"));
+        Platform ps5 = platformRepository.save(Platform.createPlatform(20001L, "PlayStation 5"));
+        gamePlatformRepository.save(GamePlatform.createGamePlatform(game, pc));
+        gamePlatformRepository.save(GamePlatform.createGamePlatform(game, ps5));
 
         //when
-        gameService.getGameDetail(igdbId);
+        GameDetailResponse result = gameService.getGameDetail(igdbId);
 
         //then
-        Game savedGame = gameRepository.findByIgdbId(igdbId).orElseThrow();
-        List<String> linkedPlatforms = gamePlatformRepository.findPlatformNamesByGameId(savedGame.getId());
+        assertThat(result.platforms()).containsExactlyInAnyOrder("PC (Windows)", "PlayStation 5");
+    }
 
-        assertThat(linkedPlatforms).containsExactlyInAnyOrder("PC (Windows)", "PlayStation 5");
+    @Test
+    @DisplayName("게임상세조회 - Developer/Publisher가 정상적으로 반환됨")
+    void t14_getGameDetail_companiesReturned() {
+        //given
+        long igdbId = 1015L;
+        Game game = Game.createGame(igdbId, "Company Game", "summary",
+                "cover", 1700000000L, null, null, null, null);
+        gameRepository.save(game);
+
+        Company company = companyRepository.save(Company.createCompany(10000L, "Nintendo"));
+        gameCompanyRepository.save(GameCompany.createGameCompany(game, company, CompanyRole.DEVELOPER));
+        gameCompanyRepository.save(GameCompany.createGameCompany(game, company, CompanyRole.PUBLISHER));
+
+        //when
+        GameDetailResponse result = gameService.getGameDetail(igdbId);
+
+        //then
+        assertThat(result.developers()).containsExactly("Nintendo");
+        assertThat(result.publishers()).containsExactly("Nintendo");
     }
 
     @Test
     @DisplayName("비슷한 게임 조회 - similarIds가 null이면 빈 리스트 반환")
     void t15_getSimilarGames_nullIds_returnsEmptyList() {
         //given
-        long igdbId = 1015L;
+        long igdbId = 1016L;
         when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(null);
 
         //when
@@ -331,7 +315,7 @@ class GameServiceTest {
     @DisplayName("비슷한 게임 조회 - briefList가 null이면 빈 리스트 반환")
     void t16_getSimilarGames_nullBriefList_returnsEmptyList() {
         //given
-        long igdbId = 1016L;
+        long igdbId = 1017L;
         when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(List.of(1L, 2L));
         when(igdbClient.getSimilarGameBriefById(anyList())).thenReturn(null);
 

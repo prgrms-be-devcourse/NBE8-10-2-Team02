@@ -45,3 +45,4 @@ db_dev.trace.db
 .env
 nul
 .claude/
+docs/
