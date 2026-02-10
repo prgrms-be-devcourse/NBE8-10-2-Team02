@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Profile("dev")
+@Profile({"dev", "prod"})
 public class BatchTriggerService {
 
     private final JobOperator jobOperator;
