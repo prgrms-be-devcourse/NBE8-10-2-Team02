@@ -21,7 +21,8 @@ public record GameDetailResponse(
     private static final String COVER_URL_TEMPLATE =
             "https://images.igdb.com/igdb/image/upload/{size}/{id}.jpg";
 
-    public static GameDetailResponse from(Game game, List<String> genres, List<String> platforms) {
+    public static GameDetailResponse from(Game game, List<String> genres, List<String> platforms,
+                                          List<String> developers, List<String> publishers) {
         String coverImageId = game.getCoverImageId();
         return new GameDetailResponse(
                 game.getId(),
@@ -31,8 +32,8 @@ public record GameDetailResponse(
                 game.getFirstReleaseDate(),
                 coverImageId,
                 coverImageId == null ? null : COVER_URL_TEMPLATE,
-                game.getDevelopers(),
-                game.getPublishers(),
+                developers,
+                publishers,
                 genres,
                 platforms
         );

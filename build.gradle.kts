@@ -41,11 +41,12 @@ dependencies {
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.postgresql:postgresql")
-	developmentOnly("org.springframework.boot:spring-boot-h2console")
+//	runtimeOnly("com.h2database:h2")
+//	developmentOnly("org.springframework.boot:spring-boot-h2console")
 
 	// Flyway
+	implementation("org.springframework.boot:spring-boot-flyway")
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
 
@@ -76,6 +77,11 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.github.ben-manes.caffeine:caffeine")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+	//Testcontainers
+	testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
+	testImplementation("org.testcontainers:postgresql")
+	testImplementation("org.testcontainers:junit-jupiter")
 
 	//RestClient test용
 	testImplementation(platform("com.squareup.okhttp3:okhttp-bom:5.3.2"))

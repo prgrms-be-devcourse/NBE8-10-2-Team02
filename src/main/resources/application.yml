@@ -18,23 +18,28 @@ spring:
     serialization:
       fail-on-empty-beans: false
   jpa:
-    show-sql: true
+    show-sql: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
+        default_batch_fetch_size: 100
+        jdbc:
+          batch_size: 200             # jdbc배치활성화(200건씩 묶어서 전송)
+        order_inserts: true           # INSERT를 엔티티 타입별로 정렬
+        order_updates: true           # UPDATE도 동일
   security:
     debug: true
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
 logging:
   level:
-    org.hibernate.orm.jdbc.bind: TRACE
-    org.hibernate.orm.jdbc.extract: TRACE
-    org.springframework.transaction.interceptor: TRACE
+    org.hibernate.orm.jdbc.bind: OFF
+    org.hibernate.orm.jdbc.extract: OFF
+    org.springframework.transaction.interceptor: OFF
     com.back: DEBUG
     org.springframework.security: DEBUG
 custom:
@@ -50,6 +55,8 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
+discord:
+  webhook-url: "${DISCORD_WEBHOOK_URL:}"
 igdb:
   base-url: "https://api.igdb.com/v4"
   client-id: "${IGDB_CLIENT_ID}"

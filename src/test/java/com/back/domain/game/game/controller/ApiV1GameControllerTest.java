@@ -43,14 +43,15 @@ public class ApiV1GameControllerTest {
     void t1_getGameDetail_success() throws Exception {
         long igdbId = 10L;
         Game game = Game.createGame(igdbId, "Zelda", "summary",
-                List.of("Nintendo"), List.of("Nintendo"), "co", null);
+                "co", null, null, null, null, null);
 
-        Field idField = Game.class.getSuperclass().getDeclaredField("id");
+        Field idField = Game.class.getDeclaredField("id");
         idField.setAccessible(true);
         idField.set(game, 1);
 
         when(gameService.getGameDetail(igdbId))
-                .thenReturn(GameDetailResponse.from(game, List.of("Action"), List.of("Switch")));
+                .thenReturn(GameDetailResponse.from(game, List.of("Action"), List.of("Switch"),
+                        List.of("Nintendo"), List.of("Nintendo")));
 
         mockMvc.perform(get("/api/v1/games/{igdbId}", igdbId))
                 .andExpect(status().isOk())

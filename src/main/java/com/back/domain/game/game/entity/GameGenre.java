@@ -23,7 +23,8 @@ import lombok.NoArgsConstructor;
 public class GameGenre {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "game_genre_seq")
+    @SequenceGenerator(name = "game_genre_seq", sequenceName = "game_genre_id_seq", allocationSize = 50)
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

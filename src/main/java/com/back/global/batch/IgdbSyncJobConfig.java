@@ -1,13 +1,11 @@
 package com.back.global.batch;
 
-import com.back.domain.game.game.entity.Game;
-import com.back.domain.game.game.repository.GameRepository;
-import com.back.domain.game.game.repository.GenreRepository;
-import com.back.domain.game.game.repository.PlatformRepository;
+import com.back.domain.game.game.repository.*;
+import com.back.global.batch.dto.GameBatchItem;
 import com.back.global.batch.processor.IgdbGameProcessor;
 import com.back.global.batch.reader.IgdbGamePageReader;
-import com.back.global.batch.tasklet.GenreSyncTasklet;
-import com.back.global.batch.tasklet.PlatformSyncTasklet;
+import com.back.global.batch.tasklet.*;
+import com.back.global.batch.listener.DiscordBatchNotifier;
 import com.back.global.batch.writer.IgdbGameUpsertWriter;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
@@ -24,11 +22,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * Job 하나와 Step 3개를 정의하는 설정 클래스
+ * Job 하나와 Step 8개를 정의하는 설정 클래스
  * igdbSyncJob
- *     ├─ 1) genreSyncStep    (Tasklet)
- *     ├─ 2) platformSyncStep (Tasklet)
- *     └─ 3) gameSyncStep     (Chunk)
+ *     ├─ 1) genreSyncStep              (Tasklet)
+ *     ├─ 2) platformSyncStep           (Tasklet)
+ *     ├─ 3) themeSyncStep              (Tasklet)
+ *     ├─ 4) gameModeSyncStep           (Tasklet)
+ *     ├─ 5) playerPerspectiveSyncStep  (Tasklet)
+ *     ├─ 6) keywordSyncStep            (Tasklet)
+ *     ├─ 7) companySyncStep            (Tasklet)
+ *     └─ 8) gameSyncStep               (Chunk)
  */
 @Configuration
 @RequiredArgsConstructor
@@ -38,16 +41,41 @@ public class IgdbSyncJobConfig {
     private final PlatformTransactionManager transactionManager;
     private final GenreSyncTasklet genreSyncTasklet;
     private final PlatformSyncTasklet platformSyncTasklet;
+    private final ThemeSyncTasklet themeSyncTasklet;
+    private final GameModeSyncTasklet gameModeSyncTasklet;
+    private final PlayerPerspectiveSyncTasklet playerPerspectiveSyncTasklet;
+    private final KeywordSyncTasklet keywordSyncTasklet;
+    private final CompanySyncTasklet companySyncTasklet;
+    private final DiscordBatchNotifier discordBatchNotifier;
     private final IgdbClient igdbClient;
     private final GameRepository gameRepository;
     private final GenreRepository genreRepository;
     private final PlatformRepository platformRepository;
+    private final ThemeRepository themeRepository;
+    private final GameModeRepository gameModeRepository;
+    private final PlayerPerspectiveRepository playerPerspectiveRepository;
+    private final KeywordRepository keywordRepository;
+    private final CompanyRepository companyRepository;
+    private final GameGenreRepository gameGenreRepository;
+    private final GamePlatformRepository gamePlatformRepository;
+    private final GameThemeRepository gameThemeRepository;
+    private final GameKeywordRepository gameKeywordRepository;
+    private final GameGameModeRepository gameGameModeRepository;
+    private final GamePlayerPerspectiveRepository gamePlayerPerspectiveRepository;
+    private final GameCompanyRepository gameCompanyRepository;
+    private final GameExternalIdRepository gameExternalIdRepository;
 
     @Bean
     public Job igdbSyncJob() {
         return new JobBuilder("igdbSyncJob", jobRepository)
+                .listener(discordBatchNotifier)
                 .start(genreSyncStep())
                 .next(platformSyncStep())
+                .next(themeSyncStep())
+                .next(gameModeSyncStep())
+                .next(playerPerspectiveSyncStep())
+                .next(keywordSyncStep())
+                .next(companySyncStep())
                 .next(gameSyncStep())
                 .build();
     }
@@ -66,6 +94,41 @@ public class IgdbSyncJobConfig {
                 .build();
     }
 
+    @Bean
+    public Step themeSyncStep() {
+        return new StepBuilder("themeSyncStep", jobRepository)
+                .tasklet(themeSyncTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step gameModeSyncStep() {
+        return new StepBuilder("gameModeSyncStep", jobRepository)
+                .tasklet(gameModeSyncTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step playerPerspectiveSyncStep() {
+        return new StepBuilder("playerPerspectiveSyncStep", jobRepository)
+                .tasklet(playerPerspectiveSyncTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step keywordSyncStep() {
+        return new StepBuilder("keywordSyncStep", jobRepository)
+                .tasklet(keywordSyncTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step companySyncStep() {
+        return new StepBuilder("companySyncStep", jobRepository)
+                .tasklet(companySyncTasklet, transactionManager)
+                .build();
+    }
+
     /**
      * 빨간줄은 Spring Batch 6.0 정식 릴리즈 전까지는 대체 API가 아직 안정화되지 않았기 때문에, 지금은 그대로 두는 게 낫다.
      * 신경 쓰이면 IDE 설정에서 deprecated warning 수준을 낮출 수 있다.
@@ -74,7 +137,7 @@ public class IgdbSyncJobConfig {
     @Bean
     public Step gameSyncStep() {
         return new StepBuilder("gameSyncStep", jobRepository)
-                .<IgdbGameDetailDto, Game>chunk(500, transactionManager)
+                .<IgdbGameDetailDto, GameBatchItem>chunk(500, transactionManager)
                 .reader(igdbGamePageReader())
                 .processor(igdbGameProcessor())
                 .writer(igdbGameUpsertWriter())
@@ -99,12 +162,30 @@ public class IgdbSyncJobConfig {
     @Bean
     @StepScope
     public IgdbGameProcessor igdbGameProcessor() {
-        return new IgdbGameProcessor(genreRepository, platformRepository);
+        return new IgdbGameProcessor(
+                genreRepository,
+                platformRepository,
+                themeRepository,
+                gameModeRepository,
+                playerPerspectiveRepository,
+                keywordRepository,
+                companyRepository
+        );
     }
 
     @Bean
     // writer는 상태가 없어서 싱글턴으로 충분함
     public IgdbGameUpsertWriter igdbGameUpsertWriter() {
-        return new IgdbGameUpsertWriter(gameRepository);
+        return new IgdbGameUpsertWriter(
+                gameRepository,
+                gameGenreRepository,
+                gamePlatformRepository,
+                gameThemeRepository,
+                gameKeywordRepository,
+                gameGameModeRepository,
+                gamePlayerPerspectiveRepository,
+                gameCompanyRepository,
+                gameExternalIdRepository
+        );
     }
 }

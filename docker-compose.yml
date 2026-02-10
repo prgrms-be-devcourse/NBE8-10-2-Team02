@@ -10,10 +10,11 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       IGDB_CLIENT_ID: ${IGDB_CLIENT_ID}
       IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
     ports:
       - "127.0.0.1:8080:8080"
     restart: on-failure
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 768M
