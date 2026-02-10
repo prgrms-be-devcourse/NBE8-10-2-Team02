@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@Profile("dev")
+@Profile({"dev", "prod"})
 public class BatchTriggerController {
 
     private final BatchTriggerService batchTriggerService;
