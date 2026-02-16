@@ -33,7 +33,8 @@ import org.springframework.transaction.PlatformTransactionManager;
  *     ├─ 5) playerPerspectiveSyncStep  (Tasklet)
  *     ├─ 6) keywordSyncStep            (Tasklet)
  *     ├─ 7) companySyncStep            (Tasklet)
- *     └─ 8) gameSyncStep               (Chunk + 벡터 매핑 갱신 + 벡터 생성)
+ *     ├─ 8) vectorDimensionRefreshStep (Tasklet - 벡터 차원 매핑 1회 갱신)
+ *     └─ 9) gameSyncStep               (Chunk + 벡터 생성)
  */
 @Configuration
 @RequiredArgsConstructor
@@ -81,6 +82,7 @@ public class IgdbSyncJobConfig {
                 .next(playerPerspectiveSyncStep())
                 .next(keywordSyncStep())
                 .next(companySyncStep())
+                .next(vectorDimensionRefreshStep())
                 .next(gameSyncStep())
                 .build();
     }
@@ -131,6 +133,16 @@ public class IgdbSyncJobConfig {
     public Step companySyncStep() {
         return new StepBuilder("companySyncStep", jobRepository)
                 .tasklet(companySyncTasklet, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step vectorDimensionRefreshStep() {
+        return new StepBuilder("vectorDimensionRefreshStep", jobRepository)
+                .tasklet((contribution, chunkContext) -> {
+                    vectorDimensionRefresher.refresh();
+                    return org.springframework.batch.infrastructure.repeat.RepeatStatus.FINISHED;
+                }, transactionManager)
                 .build();
     }
 
@@ -192,8 +204,7 @@ public class IgdbSyncJobConfig {
                 gameCompanyRepository,
                 gameExternalIdRepository,
                 gameVectorRepository,
-                gameVectorService,
-                vectorDimensionRefresher
+                gameVectorService
         );
     }
 }

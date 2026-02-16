@@ -5,7 +5,6 @@ import com.back.domain.game.game.repository.*;
 import com.back.domain.game.recommendation.repository.GameVectorRepository;
 import com.back.domain.game.recommendation.service.GameVectorService;
 import com.back.global.batch.dto.GameBatchItem;
-import com.back.global.vector.VectorDimensionConfig.VectorDimensionRefresher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.Chunk;
@@ -33,7 +32,6 @@ public class IgdbGameUpsertWriter implements ItemWriter<GameBatchItem> {
     private final GameExternalIdRepository gameExternalIdRepository;
     private final GameVectorRepository gameVectorRepository;
     private final GameVectorService gameVectorService;
-    private final VectorDimensionRefresher vectorDimensionRefresher;
 
     @Override
     public void write(Chunk<? extends GameBatchItem> chunk) {
@@ -129,10 +127,7 @@ public class IgdbGameUpsertWriter implements ItemWriter<GameBatchItem> {
         if (!allCompanies.isEmpty()) gameCompanyRepository.saveAll(allCompanies);
         if (!allExternalIds.isEmpty()) gameExternalIdRepository.saveAll(allExternalIds);
 
-        // 6. 벡터 차원 매핑 갱신 (매 chunk마다 최신 마스터 데이터 반영)
-        vectorDimensionRefresher.refresh();
-
-        // 7. 게임 피처 벡터 벌크 생성 (메모리에 있는 속성 데이터로 바로 생성, 1회 UPDATE)
+        // 6. 게임 피처 벡터 벌크 생성 (메모리에 있는 속성 데이터로 바로 생성)
         Map<Integer, String> vectorMap = new HashMap<>();
         for (GameBatchItem item : chunk) {
             Game game = persistedMap.get(item.getGame().getIgdbId());
