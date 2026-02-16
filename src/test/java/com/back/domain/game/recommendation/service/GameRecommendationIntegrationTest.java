@@ -271,6 +271,7 @@ class GameRecommendationIntegrationTest {
             Game game2 = gameRepository.save(
                     Game.createGame(101L, "Bulk2", "s", null, 1700000000L, null, null, null, null));
 
+            em.flush();
             // bulkUpdate로 벡터 저장
             gameVectorRepository.bulkUpdateFeatureVectors(Map.of(
                     game1.getId(), vectorToString(rpgVector()),
@@ -317,6 +318,8 @@ class GameRecommendationIntegrationTest {
         Game game = Game.createGame(igdbId, name, "summary", null, 1700000000L,
                 null, rating, null, null);
         game = gameRepository.save(game);
+        em.flush();
+
         gameVectorRepository.bulkUpdateFeatureVectors(
                 Map.of(game.getId(), vectorToString(vector)));
         em.flush();

@@ -15,9 +15,7 @@ public class GameVectorRepositoryImpl implements GameVectorRepositoryCustom {
 
     @Override
     public void bulkUpdateFeatureVectors(Map<Integer, String> gameVectorMap) {
-        if (gameVectorMap.isEmpty()) {
-            return;
-        }
+        if (gameVectorMap.isEmpty()) return;
 
         entityManager.unwrap(Session.class).doWork(connection -> {
             String sql = "UPDATE game SET feature_vector = cast(? as vector) WHERE id = ?";
