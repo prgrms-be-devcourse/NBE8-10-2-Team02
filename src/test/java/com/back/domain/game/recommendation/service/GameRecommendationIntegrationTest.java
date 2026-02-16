@@ -272,12 +272,11 @@ class GameRecommendationIntegrationTest {
                     Game.createGame(101L, "Bulk2", "s", null, 1700000000L, null, null, null, null));
 
             em.flush();
-            // bulkUpdate로 벡터 저장
+            // bulkUpdate로 벡터 저장 (내부에서 flush 후 JDBC batch UPDATE)
             gameVectorRepository.bulkUpdateFeatureVectors(Map.of(
                     game1.getId(), vectorToString(rpgVector()),
                     game2.getId(), vectorToString(fpsVector())
             ));
-            em.flush();
             em.clear();
             // rpgVector 기준 검색 → Bulk1(RPG)이 Bulk2(FPS)보다 유사도 높음
             Game searchTarget = saveGameWithVector(102L, "SearchTarget", rpgVector());
@@ -318,11 +317,10 @@ class GameRecommendationIntegrationTest {
         Game game = Game.createGame(igdbId, name, "summary", null, 1700000000L,
                 null, rating, null, null);
         game = gameRepository.save(game);
-        em.flush();
 
+        // bulkUpdateFeatureVectors 내부에서 flush 후 JDBC batch UPDATE 실행
         gameVectorRepository.bulkUpdateFeatureVectors(
                 Map.of(game.getId(), vectorToString(vector)));
-        em.flush();
         em.clear();
         return game;
     }
