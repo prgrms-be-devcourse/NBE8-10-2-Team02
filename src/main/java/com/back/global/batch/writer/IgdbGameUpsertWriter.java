@@ -2,7 +2,10 @@ package com.back.global.batch.writer;
 
 import com.back.domain.game.game.entity.*;
 import com.back.domain.game.game.repository.*;
+import com.back.domain.game.recommendation.repository.GameVectorRepository;
+import com.back.domain.game.recommendation.service.GameVectorService;
 import com.back.global.batch.dto.GameBatchItem;
+import com.back.global.vector.VectorDimensionConfig.VectorDimensionRefresher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.Chunk;
@@ -28,6 +31,9 @@ public class IgdbGameUpsertWriter implements ItemWriter<GameBatchItem> {
     private final GamePlayerPerspectiveRepository gamePlayerPerspectiveRepository;
     private final GameCompanyRepository gameCompanyRepository;
     private final GameExternalIdRepository gameExternalIdRepository;
+    private final GameVectorRepository gameVectorRepository;
+    private final GameVectorService gameVectorService;
+    private final VectorDimensionRefresher vectorDimensionRefresher;
 
     @Override
     public void write(Chunk<? extends GameBatchItem> chunk) {
@@ -123,6 +129,27 @@ public class IgdbGameUpsertWriter implements ItemWriter<GameBatchItem> {
         if (!allCompanies.isEmpty()) gameCompanyRepository.saveAll(allCompanies);
         if (!allExternalIds.isEmpty()) gameExternalIdRepository.saveAll(allExternalIds);
 
-        log.debug("게임 upsert: 신규 {}건, 갱신 {}건", created, updated);
+        // 6. 벡터 차원 매핑 갱신 (매 chunk마다 최신 마스터 데이터 반영)
+        vectorDimensionRefresher.refresh();
+
+        // 7. 게임 피처 벡터 벌크 생성 (메모리에 있는 속성 데이터로 바로 생성, 1회 UPDATE)
+        Map<Integer, String> vectorMap = new HashMap<>();
+        for (GameBatchItem item : chunk) {
+            Game game = persistedMap.get(item.getGame().getIgdbId());
+            try {
+                float[] vector = gameVectorService.buildFeatureVector(
+                        item.getGenres(), item.getThemes(), item.getKeywords(),
+                        item.getGameModes(), item.getPlayerPerspectives()
+                );
+                vectorMap.put(game.getId(), GameVectorService.vectorToString(vector));
+            } catch (Exception e) {
+                log.warn("게임 벡터 생성 실패 gameId={}: {}", game.getId(), e.getMessage());
+            }
+        }
+        if (!vectorMap.isEmpty()) {
+            gameVectorRepository.bulkUpdateFeatureVectors(vectorMap);
+        }
+
+        log.debug("게임 upsert: 신규 {}건, 갱신 {}건, 벡터 {}건", created, updated, vectorMap.size());
     }
 }

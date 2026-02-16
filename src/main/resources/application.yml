@@ -55,6 +55,39 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
+      steam:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      igdb:
+        max-attempts: 4
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.back.global.exception.IgdbRetryableException
+          - org.springframework.web.client.ResourceAccessException
+      steam:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.back.global.steam.exception.SteamRetryableException
+          - org.springframework.web.client.ResourceAccessException
+  ratelimiter:
+    instances:
+      igdb:
+        limit-for-period: 4
+        limit-refresh-period: 1s
+        timeout-duration: 5s
+      steam:
+        limit-for-period: 1
+        limit-refresh-period: 1s
+        timeout-duration: 10s
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL:}"
 igdb:
@@ -62,3 +95,6 @@ igdb:
   client-id: "${IGDB_CLIENT_ID}"
   client-secret: "${IGDB_CLIENT_SECRET}"
   token-url: "https://id.twitch.tv/oauth2/token"
+steam:
+  base-url: "https://api.steampowered.com"
+  api-key: "${STEAM_API_KEY}"

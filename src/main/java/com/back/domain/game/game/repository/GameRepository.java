@@ -27,6 +27,22 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
     @Query("UPDATE Game g SET g.viewCount = g.viewCount + :delta WHERE g.igdbId = :igdbId")
     void incrementViewCount(@Param("igdbId") long igdbId, @Param("delta") long delta);
 
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Game g SET g.likeCount = g.likeCount + 1 WHERE g.id = :gameId")
+    void incrementLikeCount(@Param("gameId") int gameId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Game g SET g.likeCount = g.likeCount - 1 WHERE g.id = :gameId AND g.likeCount > 0")
+    void decrementLikeCount(@Param("gameId") int gameId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Game g SET g.reviewCount = g.reviewCount + 1 WHERE g.id = :gameId")
+    void incrementReviewCount(@Param("gameId") int gameId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Game g SET g.reviewCount = g.reviewCount - 1 WHERE g.id = :gameId AND g.reviewCount > 0")
+    void decrementReviewCount(@Param("gameId") int gameId);
+
     @Query("SELECT MAX(g.lastFetchedAt) FROM Game g")
     Optional<Instant> findMaxLastFetchedAt();
 }

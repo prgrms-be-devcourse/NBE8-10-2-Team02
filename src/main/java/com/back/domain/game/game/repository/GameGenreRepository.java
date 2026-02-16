@@ -33,4 +33,6 @@ public interface GameGenreRepository extends JpaRepository<GameGenre, Long> {
     @Query(value = "INSERT INTO game_genre(game_id, genre_id) VALUES (:gameId, :genreId) ON CONFLICT DO NOTHING",
             nativeQuery = true)
     int insertIgnore(@Param("gameId") int gameId, @Param("genreId") long genreId);
+
+    List<GameGenre> findByGameId(int gameId);
 }

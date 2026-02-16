@@ -2,11 +2,11 @@ package com.back.global.igdb;
 
 import com.back.global.exception.IgdbRetryableException;
 import com.back.global.igdb.exception.IgdbApiException;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -26,11 +26,8 @@ public class IgdbRequestExecutor {
     private final IgdbProperties props;
     private final TwitchTokenService tokenService;
 
-    @Retryable(
-            retryFor = {IgdbRetryableException.class, ResourceAccessException.class},
-            maxAttempts = 4, //최초 1회 + 재시도 3회
-            backoff = @Backoff(delay = 1000, multiplier = 2)
-    )
+    @Retry(name = "igdb")
+    @RateLimiter(name = "igdb")
     public <T> T execute(String body, Class<T> responseType, String endPoint, String actionName) {
         Objects.requireNonNull(body, "IGDB request body must not be null");
         Objects.requireNonNull(responseType, "responseType must not be null");

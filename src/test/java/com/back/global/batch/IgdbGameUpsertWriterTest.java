@@ -2,8 +2,11 @@ package com.back.global.batch;
 
 import com.back.domain.game.game.entity.*;
 import com.back.domain.game.game.repository.*;
+import com.back.domain.game.recommendation.repository.GameVectorRepository;
+import com.back.domain.game.recommendation.service.GameVectorService;
 import com.back.global.batch.dto.GameBatchItem;
 import com.back.global.batch.writer.IgdbGameUpsertWriter;
+import com.back.global.vector.VectorDimensionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +43,12 @@ class IgdbGameUpsertWriterTest {
     private GameCompanyRepository gameCompanyRepository;
     @Mock
     private GameExternalIdRepository gameExternalIdRepository;
+    @Mock
+    private GameVectorRepository gameVectorRepository;
+    @Mock
+    private GameVectorService gameVectorService;
+    @Mock
+    private VectorDimensionConfig.VectorDimensionRefresher vectorDimensionRefresher;
 
     private IgdbGameUpsertWriter writer;
 
@@ -54,7 +63,10 @@ class IgdbGameUpsertWriterTest {
                 gameGameModeRepository,
                 gamePlayerPerspectiveRepository,
                 gameCompanyRepository,
-                gameExternalIdRepository
+                gameExternalIdRepository,
+                gameVectorRepository,
+                gameVectorService,
+                vectorDimensionRefresher
         );
     }
 

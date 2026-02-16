@@ -15,8 +15,7 @@ public class RestClientConfig {
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
 
     @Bean
-    public RestClient igdbRestClient(RestClient.Builder builder, IgdbProperties props,
-                                      IgdbRateLimitInterceptor igdbRetryInterceptor) {
+    public RestClient igdbRestClient(RestClient.Builder builder, IgdbProperties props) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .build();
@@ -27,13 +26,21 @@ public class RestClientConfig {
         return builder
                 .baseUrl(props.baseUrl())
                 .requestFactory(requestFactory)
-                .requestInterceptor(igdbRetryInterceptor)
                 .build();
     }
 
     @Bean
     public RestClient twitchAuthRestClient(RestClient.Builder builder) {
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(2))
+                .build();
+
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(5));
+
         // tokenUrl은 full url로 요청할 거라 baseUrl 없음
-        return builder.build();
+        return builder
+                .requestFactory(requestFactory)
+                .build();
     }
 }
