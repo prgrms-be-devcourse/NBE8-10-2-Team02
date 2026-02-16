@@ -65,8 +65,7 @@ class IgdbGameUpsertWriterTest {
                 gameCompanyRepository,
                 gameExternalIdRepository,
                 gameVectorRepository,
-                gameVectorService,
-                vectorDimensionRefresher
+                gameVectorService
         );
     }
 
