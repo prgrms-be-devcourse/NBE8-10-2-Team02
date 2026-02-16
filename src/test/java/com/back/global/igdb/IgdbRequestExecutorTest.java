@@ -2,7 +2,6 @@ package com.back.global.igdb;
 
 import com.back.global.exception.IgdbRetryableException;
 import com.back.global.igdb.exception.IgdbApiException;
-import com.google.common.util.concurrent.RateLimiter;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -32,12 +31,8 @@ public class IgdbRequestExecutorTest {
         server = new MockWebServer();
         server.start();
 
-        RateLimiter rateLimiter = mock(RateLimiter.class);
-        IgdbRateLimitInterceptor interceptor = new IgdbRateLimitInterceptor(rateLimiter);
-
         RestClient restClient = RestClient.builder()
                 .baseUrl(server.url("/").toString())
-                .requestInterceptor(interceptor)
                 .build();
 
         IgdbProperties props = mock(IgdbProperties.class);

@@ -25,8 +25,11 @@ public interface GameLikeRepository extends JpaRepository<GameLike, Integer> {
       @Query("SELECT gl.game FROM GameLike gl WHERE gl.member = :member ORDER BY gl.createdAt DESC")
       List<Game> findLikedGamesByMember(@Param("member") Member member);
                                                                                                                                   
-      // igdbId로 좋아요 여부 확인 (조인 쿼리)                                                                                    
-      @Query("SELECT CASE WHEN COUNT(gl) > 0 THEN true ELSE false END " +                                                         
-             "FROM GameLike gl WHERE gl.member.id = :memberId AND gl.game.igdbId = :igdbId")                                      
-      boolean existsByMemberIdAndGameIgdbId(@Param("memberId") int memberId, @Param("igdbId") long igdbId);                       
+      // igdbId로 좋아요 여부 확인 (조인 쿼리)
+      @Query("SELECT CASE WHEN COUNT(gl) > 0 THEN true ELSE false END " +
+             "FROM GameLike gl WHERE gl.member.id = :memberId AND gl.game.igdbId = :igdbId")
+      boolean existsByMemberIdAndGameIgdbId(@Param("memberId") int memberId, @Param("igdbId") long igdbId);
+
+      @Query("SELECT gl.game.id FROM GameLike gl WHERE gl.member.id = :memberId")
+      List<Integer> findGameIdsByMemberId(@Param("memberId") int memberId);
   }

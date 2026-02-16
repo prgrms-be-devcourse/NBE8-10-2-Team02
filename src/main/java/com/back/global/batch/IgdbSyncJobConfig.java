@@ -1,6 +1,8 @@
 package com.back.global.batch;
 
 import com.back.domain.game.game.repository.*;
+import com.back.domain.game.recommendation.repository.GameVectorRepository;
+import com.back.domain.game.recommendation.service.GameVectorService;
 import com.back.global.batch.dto.GameBatchItem;
 import com.back.global.batch.processor.IgdbGameProcessor;
 import com.back.global.batch.reader.IgdbGamePageReader;
@@ -31,7 +33,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  *     ├─ 5) playerPerspectiveSyncStep  (Tasklet)
  *     ├─ 6) keywordSyncStep            (Tasklet)
  *     ├─ 7) companySyncStep            (Tasklet)
- *     └─ 8) gameSyncStep               (Chunk)
+ *     └─ 8) gameSyncStep               (Chunk + 벡터 매핑 갱신 + 벡터 생성)
  */
 @Configuration
 @RequiredArgsConstructor
@@ -64,6 +66,9 @@ public class IgdbSyncJobConfig {
     private final GamePlayerPerspectiveRepository gamePlayerPerspectiveRepository;
     private final GameCompanyRepository gameCompanyRepository;
     private final GameExternalIdRepository gameExternalIdRepository;
+    private final GameVectorRepository gameVectorRepository;
+    private final GameVectorService gameVectorService;
+    private final com.back.global.vector.VectorDimensionConfig.VectorDimensionRefresher vectorDimensionRefresher;
 
     @Bean
     public Job igdbSyncJob() {
@@ -185,7 +190,10 @@ public class IgdbSyncJobConfig {
                 gameGameModeRepository,
                 gamePlayerPerspectiveRepository,
                 gameCompanyRepository,
-                gameExternalIdRepository
+                gameExternalIdRepository,
+                gameVectorRepository,
+                gameVectorService,
+                vectorDimensionRefresher
         );
     }
 }

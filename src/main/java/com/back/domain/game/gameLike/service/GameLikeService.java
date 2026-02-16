@@ -4,9 +4,11 @@ import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.repository.GameRepository;
 import com.back.domain.game.gameLike.entity.GameLike;
 import com.back.domain.game.gameLike.repository.GameLikeRepository;
+import com.back.domain.game.recommendation.event.ProfileVectorUpdateEvent;
 import com.back.domain.member.member.entity.Member;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class GameLikeService {
     private final GameLikeRepository gameLikeRepository;
     private final GameRepository gameRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public boolean toggleLike(Member member, long igdbId) {
@@ -26,18 +29,21 @@ public class GameLikeService {
 
         Optional<GameLike> existingLike = gameLikeRepository.findByMemberAndGame(member, game);
 
+        boolean liked;
         if (existingLike.isPresent()) {
             // 이미 있으면 취소
             gameLikeRepository.delete(existingLike.get());
-            game.decrementLikeCount();
-            return false;
+            gameRepository.decrementLikeCount(game.getId());
+            liked = false;
         } else {
             // 없으면 추가
             GameLike gameLike = GameLike.createGameLike(member, game);
             gameLikeRepository.save(gameLike);
-            game.incrementLikeCount();
-            return true;
+            gameRepository.incrementLikeCount(game.getId());
+            liked = true;
         }
+        eventPublisher.publishEvent(new ProfileVectorUpdateEvent(member.getId(), "toggleLike"));
+        return liked;
     }
 
     @Transactional(readOnly = true)
@@ -54,7 +60,7 @@ public class GameLikeService {
     }
 
 //    @Transactional(readOnly = true)
-//    public List<Game> getLinkedGames(Member member) {
+//    public List<Game> getLikedGames(Member member) {
 //        return gameLikeRepository.findLikedGamesByMember(member);
 //    }
 }

@@ -5,6 +5,8 @@ import com.back.domain.game.game.dto.GameVideoResponse;
 import com.back.domain.game.game.dto.SimilarGameResponse;
 import com.back.domain.game.game.entity.*;
 import com.back.domain.game.game.repository.*;
+import com.back.domain.game.recommendation.dto.GameRecommendationResponse;
+import com.back.domain.game.recommendation.service.GameRecommendationService;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbVideoDto;
@@ -35,6 +37,8 @@ class GameServiceTest {
     GameRepository gameRepository;
     @MockitoBean
     IgdbClient igdbClient;
+    @MockitoBean
+    GameRecommendationService gameRecommendationService;
     @Autowired
     GenreRepository genreRepository;
     @Autowired
@@ -49,10 +53,13 @@ class GameServiceTest {
     CompanyRepository companyRepository;
     @Autowired
     Cache<Long, GameDetailResponse> gameDetailCache;
+    @Autowired
+    Cache<Long, List<SimilarGameResponse>> similarListCache;
 
     @BeforeEach
     void setUp() {
         gameDetailCache.invalidateAll();
+        similarListCache.invalidateAll();
     }
 
     @Test
@@ -122,15 +129,13 @@ class GameServiceTest {
     }
 
     @Test
-    @DisplayName("비슷한 게임 조회 - API 호출")
-    void t5_getSimilarGames_apiCall() {
+    @DisplayName("비슷한 게임 조회 - pgvector 추천 호출")
+    void t5_getSimilarGames_recommendation() {
         //given
         long igdbId = 555L;
-        List<Long> similarIds = List.of(1L, 2L, 3L);
-        when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(similarIds);
-        when(igdbClient.getSimilarGameBriefById(similarIds)).thenReturn(List.of(
-                new SimilarGameResponse(1L, "Similar1", "co1"),
-                new SimilarGameResponse(2L, "Similar2", "co2")
+        when(gameRecommendationService.getSimilarGames(igdbId, 10)).thenReturn(List.of(
+                new GameRecommendationResponse(1, "Similar1", "co1", 0.9, 0.85),
+                new GameRecommendationResponse(2, "Similar2", "co2", 0.8, 0.75)
         ));
 
         //when
@@ -139,6 +144,7 @@ class GameServiceTest {
         //then
         assertThat(result).hasSize(2);
         assertThat(result.get(0).name()).isEqualTo("Similar1");
+        verify(gameRecommendationService, times(1)).getSimilarGames(igdbId, 10);
     }
 
     @Test
@@ -146,9 +152,8 @@ class GameServiceTest {
     void t6_getSimilarGames_secondCall_fromCache() {
         //given
         long igdbId = 444L;
-        when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(List.of(1L));
-        when(igdbClient.getSimilarGameBriefById(anyList())).thenReturn(List.of(
-                new SimilarGameResponse(1L, "Cached", "co")
+        when(gameRecommendationService.getSimilarGames(igdbId, 10)).thenReturn(List.of(
+                new GameRecommendationResponse(1, "Cached", "co", 0.9, 0.85)
         ));
 
         //when
@@ -157,7 +162,7 @@ class GameServiceTest {
 
         //then
         assertThat(result).hasSize(1);
-        verify(igdbClient, times(1)).getSimilarGameIds(igdbId);
+        verify(gameRecommendationService, times(1)).getSimilarGames(igdbId, 10);
     }
 
     @Test
@@ -179,7 +184,7 @@ class GameServiceTest {
     void t8_getSimilarGames_notFound_returnsEmptyList() {
         //given
         long igdbId = 222L;
-        when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(List.of());
+        when(gameRecommendationService.getSimilarGames(igdbId, 10)).thenReturn(List.of());
 
         //when
         List<SimilarGameResponse> result = gameService.getSimilarGames(igdbId);
@@ -297,27 +302,11 @@ class GameServiceTest {
     }
 
     @Test
-    @DisplayName("비슷한 게임 조회 - similarIds가 null이면 빈 리스트 반환")
-    void t15_getSimilarGames_nullIds_returnsEmptyList() {
+    @DisplayName("비슷한 게임 조회 - 추천 결과가 빈 리스트이면 빈 리스트 반환")
+    void t15_getSimilarGames_emptyRecommendations_returnsEmptyList() {
         //given
         long igdbId = 1016L;
-        when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(null);
-
-        //when
-        List<SimilarGameResponse> result = gameService.getSimilarGames(igdbId);
-
-        //then
-        assertThat(result).isEmpty();
-        verify(igdbClient, never()).getSimilarGameBriefById(anyList());
-    }
-
-    @Test
-    @DisplayName("비슷한 게임 조회 - briefList가 null이면 빈 리스트 반환")
-    void t16_getSimilarGames_nullBriefList_returnsEmptyList() {
-        //given
-        long igdbId = 1017L;
-        when(igdbClient.getSimilarGameIds(igdbId)).thenReturn(List.of(1L, 2L));
-        when(igdbClient.getSimilarGameBriefById(anyList())).thenReturn(null);
+        when(gameRecommendationService.getSimilarGames(igdbId, 10)).thenReturn(List.of());
 
         //when
         List<SimilarGameResponse> result = gameService.getSimilarGames(igdbId);

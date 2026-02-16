@@ -87,15 +87,12 @@ dependencies {
 	testImplementation(platform("com.squareup.okhttp3:okhttp-bom:5.3.2"))
 	testImplementation("com.squareup.okhttp3:mockwebserver")
 
-	//Guava rate limiter
-	implementation("com.google.guava:guava:33.4.0-jre")
-
-	//Resilience4j circuit breaker
+	//Resilience4j (circuit breaker, retry, rate limiter)
 	implementation("io.github.resilience4j:resilience4j-spring-boot3:2.3.0")
 	implementation("org.aspectj:aspectjweaver")
 
-	//Spring Retry
-	implementation("org.springframework.retry:spring-retry:2.0.11")
+	// pgvector
+	implementation("com.pgvector:pgvector:0.1.6")
 
 }
 

@@ -7,10 +7,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface GameThemeRepository extends JpaRepository<GameTheme, Long> {
 
     @Modifying(flushAutomatically = true)
     @Query("DELETE FROM GameTheme gt WHERE gt.game.id IN :gameIds")
     void deleteByGameIdIn(@Param("gameIds") Collection<Integer> gameIds);
+
+    List<GameTheme> findByGameId(int gameId);
 }

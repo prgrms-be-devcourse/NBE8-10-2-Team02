@@ -2,6 +2,7 @@ package com.back.domain.member.memberGame.service;
 
 import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.platform.PlatformGroup;
+import com.back.domain.game.recommendation.event.ProfileVectorUpdateEvent;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
 import com.back.domain.member.memberGame.StatusEnum;
@@ -12,6 +13,7 @@ import com.back.domain.review.entity.Review;
 import com.back.global.exception.ServiceException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class MemberGameService {
     private final MemberRepository memberRepository;
     private final MemberGameRepository memberGameRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MemberGame addToLibrary(String platformGroupName, double playtime, boolean isFavorite, StatusEnum status, Member member, Game game) {
         // Check for duplicate game in library
@@ -37,11 +40,17 @@ public class MemberGameService {
         if (platformId == null) {
             throw new ServiceException("400-3", "유효하지 않은 플랫폼입니다: " + platformGroupName);
         }
-        return member.addMemberGame(platformId, playtime, isFavorite, status, game);
+        MemberGame memberGame = member.addMemberGame(platformId, playtime, isFavorite, status, game);
+        eventPublisher.publishEvent(new ProfileVectorUpdateEvent(member.getId(), "addToLibrary"));
+        return memberGame;
     }
 
     public boolean removeFromLibrary(Member member, int id) {
-        return member.removeGame(id);
+        boolean removed = member.removeGame(id);
+        if (removed) {
+            eventPublisher.publishEvent(new ProfileVectorUpdateEvent(member.getId(), "removeFromLibrary"));
+        }
+        return removed;
     }
 
     public MemberGame findByMemberAndGame(int memberId, int gameId) {
@@ -79,6 +88,7 @@ public class MemberGameService {
         if (request.playtime() != null) memberGame.setPlaytime(request.playtime());
         if (request.isFavorite() != null) memberGame.setFavorite(request.isFavorite());
         if (request.platform() != null) memberGame.setPlatformByGroupName(request.platform());
+        eventPublisher.publishEvent(new ProfileVectorUpdateEvent(memberId, "updateMemberGame"));
         return memberGame;
     }
 

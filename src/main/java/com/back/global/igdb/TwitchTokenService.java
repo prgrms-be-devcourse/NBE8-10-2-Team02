@@ -10,6 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
 @Service
@@ -20,6 +21,7 @@ public class TwitchTokenService {
     private final IgdbProperties props;
 
     private final AtomicReference<CachedToken> cache = new AtomicReference<>();
+    private final ReentrantLock tokenLock = new ReentrantLock();
 
     @PostConstruct
     public void warmUpToken() {
@@ -37,12 +39,23 @@ public class TwitchTokenService {
         if (current != null && current.expiresAt().isAfter(Instant.now().plusSeconds(30))) {
             return current.token();
         }
-        // 만료 30초 전이면 재발급(여유 버퍼)
-        TokenResponse res = fetchNewToken();
-        Instant expiresAt = Instant.now().plusSeconds(res.expires_in());
 
-        cache.set(new CachedToken(res.access_token(), expiresAt));
-        return res.access_token();
+        // 만료 30초 전이면 재발급 — 1개 스레드만 갱신, 나머지는 대기
+        tokenLock.lock();
+        try {
+            // double-check: 대기 중 다른 스레드가 이미 갱신했을 수 있음
+            current = cache.get();
+            if (current != null && current.expiresAt().isAfter(Instant.now().plusSeconds(30))) {
+                return current.token();
+            }
+
+            TokenResponse res = fetchNewToken();
+            Instant expiresAt = Instant.now().plusSeconds(res.expires_in());
+            cache.set(new CachedToken(res.access_token(), expiresAt));
+            return res.access_token();
+        } finally {
+            tokenLock.unlock();
+        }
     }
 
     private TokenResponse fetchNewToken() {

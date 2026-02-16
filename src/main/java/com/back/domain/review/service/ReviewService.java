@@ -1,12 +1,15 @@
 package com.back.domain.review.service;
 
 import com.back.domain.game.game.entity.Game;
+import com.back.domain.game.game.repository.GameRepository;
+import com.back.domain.game.recommendation.event.ProfileVectorUpdateEvent;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.memberGame.repository.MemberGameRepository;
 import com.back.domain.review.entity.Review;
 import com.back.domain.review.repository.ReviewRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,7 +21,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ReviewService {
     private final ReviewRepository reviewRepository;
+    private final GameRepository gameRepository;
     private final MemberGameRepository memberGameRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Optional<Review> findById(Integer id) {
         return reviewRepository.findById(id);
@@ -40,8 +45,11 @@ public class ReviewService {
         }
 
         Review review = new Review(title, content, rating, member, game);
-        game.incrementReviewCount();
-        return reviewRepository.save(review);
+        reviewRepository.save(review);
+        gameRepository.incrementReviewCount(game.getId());
+        Review saved = review;
+        eventPublisher.publishEvent(new ProfileVectorUpdateEvent(member.getId(), "writeReview"));
+        return saved;
     }
 
     public List<Review> findAll() {
@@ -69,16 +77,19 @@ public class ReviewService {
     }
 
     public void modify(Review review, String title, String content, double rating) {
-        review.modify(title, content,rating);
+        review.modify(title, content, rating);
+        eventPublisher.publishEvent(new ProfileVectorUpdateEvent(review.getAuthor().getId(), "modifyReview"));
     }
 
     public void delete(Review review) {
-        review.getGame().decrementReviewCount();
+        int authorId = review.getAuthor().getId();
+        gameRepository.decrementReviewCount(review.getGame().getId());
         // Clear the review reference in MemberGame if it exists
         memberGameRepository.findByMemberIdAndGameId(review.getAuthor().getId(), review.getGame().getId())
                 .ifPresent(memberGame -> memberGame.setReview(null));
 
         reviewRepository.delete(review);
+        eventPublisher.publishEvent(new ProfileVectorUpdateEvent(authorId, "deleteReview"));
     }
 
 }

@@ -4,6 +4,8 @@ import com.back.domain.game.game.dto.*;
 import com.back.domain.game.game.entity.CompanyRole;
 import com.back.domain.game.game.entity.Game;
 import com.back.domain.game.game.repository.*;
+import com.back.domain.game.recommendation.dto.GameRecommendationResponse;
+import com.back.domain.game.recommendation.service.GameRecommendationService;
 import com.back.global.exception.ServiceException;
 import com.back.global.igdb.IgdbCircuitBreakerClient;
 import com.back.global.igdb.dto.IgdbVideoDto;
@@ -30,6 +32,7 @@ public class GameService {
     private final IgdbCircuitBreakerClient igdbClient;
     private final IgdbPopularRightNowService igdbPopularRightNowService;
     private final GameCacheService gameCacheService;
+    private final GameRecommendationService gameRecommendationService;
 
     /**
      * IGDB "Popular Right Now" 인기 게임 조회
@@ -76,30 +79,17 @@ public class GameService {
     }
 
     public List<SimilarGameResponse> getSimilarGames(long igdbId) {
-        // 1. cachedList에서 찾기
-        List<SimilarGameResponse> cachedList = gameCacheService.getSimilarList(igdbId);
-        if (cachedList != null) return cachedList;
+        List<SimilarGameResponse> cached = gameCacheService.getSimilarList(igdbId);
+        if (cached != null) return cached;
 
-        // 2. similar ids 캐시 확인
-        List<Long> ids = gameCacheService.getSimilarIds(igdbId);
+        List<GameRecommendationResponse> recommendations = gameRecommendationService.getSimilarGames(igdbId, 10);
 
-        // 3. ids가 없으면 igdb에서 similarGames id만 조회 후 캐시에 저장
-        if (ids == null) {
-            ids = igdbClient.getSimilarGameIds(igdbId);
-            if (ids == null) ids = Collections.emptyList();
-            gameCacheService.putSimilarIds(igdbId, ids);
-        }
-        if (ids.isEmpty()) {
-            gameCacheService.putSimilarList(igdbId, List.of());
-            return List.of();
-        }
-        // 4. id들로 name + cover만 2차 조회 (limit 적용)
-        List<SimilarGameResponse> list = igdbClient.getSimilarGameBriefById(ids);
-        if (list == null) list = List.of();
+        List<SimilarGameResponse> result = recommendations.stream()
+                .map(r -> new SimilarGameResponse(r.gameId(), r.name(), r.coverImageId()))
+                .toList();
 
-        // 5. 결과 캐시
-        gameCacheService.putSimilarList(igdbId, list);
-        return list;
+        gameCacheService.putSimilarList(igdbId, result);
+        return result;
     }
 
     private GameVideoResponse fetchVideoId(long igdbId) {

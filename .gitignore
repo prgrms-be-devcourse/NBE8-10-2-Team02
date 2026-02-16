@@ -46,3 +46,4 @@ db_dev.trace.db
 nul
 .claude/
 docs/
+*.md

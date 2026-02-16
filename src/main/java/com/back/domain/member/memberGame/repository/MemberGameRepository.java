@@ -19,4 +19,6 @@ public interface MemberGameRepository extends JpaRepository<MemberGame, Integer>
     Page<MemberGame> findByMemberIdAndPlatformIdIn(int memberId, List<Long> platformIds, Pageable pageable);
 
     Page<MemberGame> findByMemberIdAndStatusAndPlatformIdIn(int memberId, StatusEnum status, List<Long> platformIds, Pageable pageable);
+
+    List<MemberGame> findAllByMemberId(int memberId);
 }
