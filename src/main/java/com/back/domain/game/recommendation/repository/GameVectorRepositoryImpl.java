@@ -20,12 +20,18 @@ public class GameVectorRepositoryImpl implements GameVectorRepositoryCustom {
         entityManager.flush();
 
         entityManager.unwrap(Session.class).doWork(connection -> {
-            String sql = "UPDATE game SET feature_vector = cast(? as vector) WHERE id = ?";
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            // 1. TRUNCATE staging
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("TRUNCATE game_vector_staging");
+            }
+
+            // 2. Batch INSERT into staging (reWriteBatchedInserts 활용)
+            String insertSql = "INSERT INTO game_vector_staging (game_id, feature_vector) VALUES (?, ?)";
+            try (PreparedStatement ps = connection.prepareStatement(insertSql)) {
                 int count = 0;
                 for (Map.Entry<Integer, String> entry : gameVectorMap.entrySet()) {
-                    ps.setString(1, entry.getValue());
-                    ps.setInt(2, entry.getKey());
+                    ps.setInt(1, entry.getKey());
+                    ps.setString(2, entry.getValue());
                     ps.addBatch();
 
                     if (++count % BATCH_SIZE == 0) {
@@ -34,6 +40,19 @@ public class GameVectorRepositoryImpl implements GameVectorRepositoryCustom {
                     }
                 }
                 ps.executeBatch();
+            }
+
+            // 3. UPDATE game JOIN staging
+            try (var stmt = connection.createStatement()) {
+                stmt.execute(
+                        "UPDATE game SET feature_vector = cast(s.feature_vector as vector) " +
+                        "FROM game_vector_staging s WHERE game.id = s.game_id"
+                );
+            }
+
+            // 4. TRUNCATE staging
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("TRUNCATE game_vector_staging");
             }
         });
     }

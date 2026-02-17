@@ -12,6 +12,7 @@ import com.back.global.batch.writer.IgdbGameUpsertWriter;
 import com.back.global.igdb.IgdbClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.igdb.exception.IgdbApiException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
@@ -19,22 +20,25 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * Job 하나와 Step 8개를 정의하는 설정 클래스
+ * Job 하나와 Step 11개를 정의하는 설정 클래스
  * igdbSyncJob
- *     ├─ 1) genreSyncStep              (Tasklet)
- *     ├─ 2) platformSyncStep           (Tasklet)
- *     ├─ 3) themeSyncStep              (Tasklet)
- *     ├─ 4) gameModeSyncStep           (Tasklet)
- *     ├─ 5) playerPerspectiveSyncStep  (Tasklet)
- *     ├─ 6) keywordSyncStep            (Tasklet)
- *     ├─ 7) companySyncStep            (Tasklet)
- *     ├─ 8) vectorDimensionRefreshStep (Tasklet - 벡터 차원 매핑 1회 갱신)
- *     └─ 9) gameSyncStep               (Chunk + 벡터 생성)
+ *     ├─  1) genreSyncStep              (Tasklet)
+ *     ├─  2) platformSyncStep           (Tasklet)
+ *     ├─  3) themeSyncStep              (Tasklet)
+ *     ├─  4) gameModeSyncStep           (Tasklet)
+ *     ├─  5) playerPerspectiveSyncStep  (Tasklet)
+ *     ├─  6) keywordSyncStep            (Tasklet)
+ *     ├─  7) companySyncStep            (Tasklet)
+ *     ├─  8) vectorDimensionRefreshStep (Tasklet - 벡터 차원 매핑 1회 갱신)
+ *     ├─  9) dropVectorIndexStep        (Tasklet - HNSW 인덱스 DROP)
+ *     ├─ 10) gameSyncStep               (Chunk + 스테이징 테이블 벡터 생성)
+ *     └─ 11) createVectorIndexStep      (Tasklet - HNSW 인덱스 CREATE, 항상 실행)
  */
 @Configuration
 @RequiredArgsConstructor
@@ -70,6 +74,7 @@ public class IgdbSyncJobConfig {
     private final GameVectorRepository gameVectorRepository;
     private final GameVectorService gameVectorService;
     private final com.back.global.vector.VectorDimensionConfig.VectorDimensionRefresher vectorDimensionRefresher;
+    private final EntityManager entityManager;
 
     @Bean
     public Job igdbSyncJob() {
@@ -83,7 +88,10 @@ public class IgdbSyncJobConfig {
                 .next(keywordSyncStep())
                 .next(companySyncStep())
                 .next(vectorDimensionRefreshStep())
+                .next(dropVectorIndexStep())
                 .next(gameSyncStep())
+                .on("*").to(createVectorIndexStep())
+                .end()
                 .build();
     }
 
@@ -141,7 +149,32 @@ public class IgdbSyncJobConfig {
         return new StepBuilder("vectorDimensionRefreshStep", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
                     vectorDimensionRefresher.refresh();
-                    return org.springframework.batch.infrastructure.repeat.RepeatStatus.FINISHED;
+                    return RepeatStatus.FINISHED;
+                }, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step dropVectorIndexStep() {
+        return new StepBuilder("dropVectorIndexStep", jobRepository)
+                .tasklet((contribution, chunkContext) -> {
+                    entityManager.createNativeQuery(
+                            "DROP INDEX IF EXISTS ix_game_feature_vector"
+                    ).executeUpdate();
+                    return RepeatStatus.FINISHED;
+                }, transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step createVectorIndexStep() {
+        return new StepBuilder("createVectorIndexStep", jobRepository)
+                .tasklet((contribution, chunkContext) -> {
+                    entityManager.createNativeQuery(
+                            "CREATE INDEX IF NOT EXISTS ix_game_feature_vector " +
+                            "ON game USING hnsw (feature_vector vector_cosine_ops)"
+                    ).executeUpdate();
+                    return RepeatStatus.FINISHED;
                 }, transactionManager)
                 .build();
     }
