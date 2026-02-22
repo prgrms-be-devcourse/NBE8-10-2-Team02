@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPathPattern": ".*"
+  },
+  "response": {
+    "status": 503,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "message": "Service Unavailable - WireMock simulated IGDB failure"
+    }
+  }
+}

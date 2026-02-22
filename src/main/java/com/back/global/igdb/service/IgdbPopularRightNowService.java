@@ -1,14 +1,14 @@
 package com.back.global.igdb.service;
 
-import com.back.global.igdb.IgdbCircuitBreakerClient;
+import com.back.global.igdb.IgdbDefensiveClient;
 import com.back.global.igdb.IgdbRequestExecutor;
 import com.back.global.igdb.dto.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -24,7 +24,7 @@ public class IgdbPopularRightNowService {
     private static final int TYPE_WANT = 2;
     private static final int TYPE_TWITCH_24H_WATCHED = 34;
 
-    private final IgdbCircuitBreakerClient igdbClient;
+    private final IgdbDefensiveClient igdbClient;
     private final IgdbRequestExecutor requestExecutor;
 
     private final ObjectMapper objectMapper;

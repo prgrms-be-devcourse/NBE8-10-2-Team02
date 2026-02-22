@@ -16,3 +16,16 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+
+# ─── WireMock 테스트 모드 (Resilience4j 방어체계 테스트) ──────────────────────
+# CircuitBreaker / Retry / Bulkhead / RateLimiter 동작 확인
+#
+# 활성화 방법:
+#   1. WireMock 실행: docker compose -f docker-compose-monitoring.yml up wiremock -d
+#   2. 아래 igdb.base-url 주석 해제 후 앱 재시작 (Caffeine 캐시 초기화됨)
+#   3. k6 run k6/wiremock-test.js
+#   4. 테스트 완료 후 아래 주석 복구
+#
+#igdb:
+#  base-url: "http://localhost:8081"
+# ─────────────────────────────────────────────────────────────────────────────

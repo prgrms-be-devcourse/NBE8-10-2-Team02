@@ -7,7 +7,7 @@ import com.back.domain.game.game.repository.*;
 import com.back.domain.game.recommendation.dto.GameRecommendationResponse;
 import com.back.domain.game.recommendation.service.GameRecommendationService;
 import com.back.global.exception.ServiceException;
-import com.back.global.igdb.IgdbCircuitBreakerClient;
+import com.back.global.igdb.IgdbDefensiveClient;
 import com.back.global.igdb.dto.IgdbVideoDto;
 import com.back.global.igdb.dto.PopularGameCardDto;
 import com.back.global.igdb.service.IgdbPopularRightNowService;
@@ -29,7 +29,7 @@ public class GameService {
     private final GameGenreRepository gameGenreRepository;
     private final GamePlatformRepository gamePlatformRepository;
     private final GameCompanyRepository gameCompanyRepository;
-    private final IgdbCircuitBreakerClient igdbClient;
+    private final IgdbDefensiveClient igdbClient;
     private final IgdbPopularRightNowService igdbPopularRightNowService;
     private final GameCacheService gameCacheService;
     private final GameRecommendationService gameRecommendationService;

@@ -9,6 +9,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -40,8 +41,18 @@ public class TwitchTokenService {
             return current.token();
         }
 
-        // 만료 30초 전이면 재발급 — 1개 스레드만 갱신, 나머지는 대기
-        tokenLock.lock();
+        // 만료 30초 전이면 재발급 — 1개 스레드만 갱신, 나머지는 5초 대기
+        // tryLock: Twitch 장애 시 100명이 순차적으로 무한 대기하는 문제 방지
+        boolean acquired;
+        try {
+            acquired = tokenLock.tryLock(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Twitch 토큰 갱신 대기 중 인터럽트", e);
+        }
+        if (!acquired) {
+            throw new IllegalStateException("Twitch 토큰 갱신 대기 시간 초과 (5s)");
+        }
         try {
             // double-check: 대기 중 다른 스레드가 이미 갱신했을 수 있음
             current = cache.get();

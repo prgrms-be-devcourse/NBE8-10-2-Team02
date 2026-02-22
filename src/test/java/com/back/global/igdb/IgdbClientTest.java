@@ -27,7 +27,8 @@ import static org.mockito.Mockito.*;
  * - 요청 body (APICALYPSE) 검증
  * - 응답 JSON → DTO 역직렬화 검증
  *
- * 참고: RateLimiter, 재시도 로직은 IgdbRetryInterceptorTest에서 테스트
+ * 참고: RateLimiter는 AOP 기반으로 Spring 컨텍스트에서만 동작하므로 별도 통합 테스트 필요
+ *       사용자 경로(IgdbRequestExecutor)는 Retry 없음. 배치 경로(BatchIgdbRequestExecutor)만 igdb-batch Retry 사용
  */
 public class IgdbClientTest {
     private IgdbProperties props = mock(IgdbProperties.class);
@@ -268,40 +269,6 @@ public class IgdbClientTest {
         assertThat(req.getHeader("Client-ID")).isEqualTo("test-client-id");
         assertThat(req.getHeader("Authorization")).isEqualTo("Bearer test-access-token");
         assertThat(req.getHeader("Content-Type")).startsWith("text/plain");
-    }
-
-    @Test
-    @DisplayName("fetchGamePage - updatedAfterEpoch 없으면 where절 없이 요청")
-    void t12_fetchGamePage_withoutFilter() throws Exception {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .addHeader("Content-Type", "application/json")
-                .setBody("[]"));
-
-        igdbClient.fetchGamePage(0, 500, null);
-
-        RecordedRequest req = server.takeRequest();
-        String reqBody = req.getBody().readString(StandardCharsets.UTF_8);
-        assertThat(reqBody).doesNotContain("where updated_at");
-        assertThat(reqBody).contains("offset 0;");
-        assertThat(reqBody).contains("limit 500;");
-    }
-
-    @Test
-    @DisplayName("fetchGamePage - updatedAfterEpoch 있으면 where updated_at 조건 포함")
-    void t13_fetchGamePage_withFilter() throws Exception {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .addHeader("Content-Type", "application/json")
-                .setBody("[]"));
-
-        igdbClient.fetchGamePage(0, 500, 1700000000L);
-
-        RecordedRequest req = server.takeRequest();
-        String reqBody = req.getBody().readString(StandardCharsets.UTF_8);
-        assertThat(reqBody).contains("where updated_at > 1700000000;");
-        assertThat(reqBody).contains("offset 0;");
-        assertThat(reqBody).contains("limit 500;");
     }
 
     // 공통 요청 검증

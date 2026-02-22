@@ -1,6 +1,6 @@
 plugins {
 	java
-	id("org.springframework.boot") version "4.0.1"
+	id("org.springframework.boot") version "3.5.10"
 	id("io.spring.dependency-management") version "1.1.7"
 	kotlin("jvm") version "2.1.0"
 	kotlin("plugin.spring") version "2.1.0"
@@ -35,9 +35,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-batch")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
-	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springframework.boot:spring-boot-starter-web")
 
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -46,24 +46,16 @@ dependencies {
 //	developmentOnly("org.springframework.boot:spring-boot-h2console")
 
 	// Flyway
-	implementation("org.springframework.boot:spring-boot-flyway")
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
 
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
-
-	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	implementation("org.springframework.boot:spring-boot-starter-security")
-	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-
-	implementation("org.springframework.boot:spring-boot-starter-restclient")
+	testImplementation("org.springframework.security:spring-security-test")
 
 	// 1. QueryDSL 라이브러리
 	implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
@@ -89,7 +81,12 @@ dependencies {
 
 	//Resilience4j (circuit breaker, retry, rate limiter)
 	implementation("io.github.resilience4j:resilience4j-spring-boot3:2.3.0")
+	implementation("io.github.resilience4j:resilience4j-micrometer:2.3.0")
 	implementation("org.aspectj:aspectjweaver")
+
+	// Actuator + Prometheus (메트릭 수집)
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("io.micrometer:micrometer-registry-prometheus")
 
 	// pgvector
 	implementation("com.pgvector:pgvector:0.1.6")

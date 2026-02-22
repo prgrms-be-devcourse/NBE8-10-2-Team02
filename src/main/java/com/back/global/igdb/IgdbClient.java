@@ -14,7 +14,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * IgdbClient: APICALYPSE 쿼리 조립 및 응답 가공 담당
+ * API 경로 전용 IGDB 클라이언트 (IgdbRequestExecutor 사용).
+ * - connect 1s / read 3s 타임아웃 → 빠른 실패 → CB open 가속 → DB fallback
+ * - 사용처: IgdbCircuitBreakerClient (사용자 요청 경로)
+ * 배치 경로는 BatchIgdbClient를 사용.
  */
 @Slf4j
 @Component
@@ -166,49 +169,6 @@ public class IgdbClient {
         return firstOrNull(res);
     }
 
-    public List<IgdbGameDetailDto> fetchGamePage(int offset, int limit) {
-        return fetchGamePage(offset, limit, null);
-    }
-
-    public List<IgdbGameDetailDto> fetchGamePage(int offset, int limit, Long updatedAfterEpoch) {
-        String whereClause = updatedAfterEpoch != null
-                ? "where updated_at > %d;".formatted(updatedAfterEpoch)
-                : "";
-
-        String body = """
-                fields id,name,summary,storyline,first_release_date,
-                    involved_companies.company.id,involved_companies.company.name,
-                    involved_companies.publisher,involved_companies.developer,
-                    cover.id,cover.image_id,
-                    genres.id,genres.name,
-                    platforms.id,platforms.name,
-                    themes.id,themes.name,
-                    keywords.id,keywords.name,
-                    game_modes.id,game_modes.name,
-                    player_perspectives.id,player_perspectives.name,
-                    external_games.category,external_games.uid,
-                    franchises.id,franchises.name,
-                    aggregated_rating,total_rating,total_rating_count;
-                %s
-                sort id asc;
-                offset %d;
-                limit %d;
-                """.formatted(whereClause, offset, limit);
-
-        IgdbGameDetailDto[] res = requestExecutor.execute(body, IgdbGameDetailDto[].class, GAMES_ENDPOINT, "fetchGamePage");
-        return res == null ? List.of() : List.of(res);
-    }
-
-    public List<IgdbPlatformDto> fetchPlatforms() {
-        String body = """
-                fields id,name;
-                limit 500;
-                """;
-
-        IgdbPlatformDto[] res = requestExecutor.execute(body, IgdbPlatformDto[].class, "/platforms", "fetchPlatforms");
-        return res == null ? List.of() : List.of(res);
-    }
-
     public List<IgdbGenreDto> fetchGenres() {
         String body = """
         fields id,name;
@@ -219,66 +179,7 @@ public class IgdbClient {
         return res == null ? List.of() : List.of(res);
     }
 
-    public List<IgdbThemeDto> fetchThemes() {
-        String body = """
-        fields id,name;
-        limit 500;
-        """;
-
-        IgdbThemeDto[] res = requestExecutor.execute(body, IgdbThemeDto[].class, "/themes", "fetchThemes");
-        return res == null ? List.of() : List.of(res);
-    }
-
-    public List<IgdbGameModeDto> fetchGameModes() {
-        String body = """
-        fields id,name;
-        limit 500;
-        """;
-
-        IgdbGameModeDto[] res = requestExecutor.execute(body, IgdbGameModeDto[].class, "/game_modes", "fetchGameModes");
-        return res == null ? List.of() : List.of(res);
-    }
-
-    public List<IgdbPlayerPerspectiveDto> fetchPlayerPerspectives() {
-        String body = """
-        fields id,name;
-        limit 500;
-        """;
-
-        IgdbPlayerPerspectiveDto[] res = requestExecutor.execute(body, IgdbPlayerPerspectiveDto[].class, "/player_perspectives", "fetchPlayerPerspectives");
-        return res == null ? List.of() : List.of(res);
-    }
-
-    public List<IgdbKeywordDto> fetchKeywords() {
-        return fetchAllPaged("/keywords", IgdbKeywordDto[].class, "fetchKeywords");
-    }
-
-    public List<IgdbCompanyDto> fetchCompanies() {
-        return fetchAllPaged("/companies", IgdbCompanyDto[].class, "fetchCompanies");
-    }
-
-    private <T> List<T> fetchAllPaged(String endpoint, Class<T[]> responseType, String operationName) {
-        List<T> all = new ArrayList<>();
-        int offset = 0;
-        int limit = 500;
-
-        while (true) {
-            String body = """
-                    fields id,name;
-                    sort id asc;
-                    offset %d;
-                    limit %d;
-                    """.formatted(offset, limit);
-
-            T[] res = requestExecutor.execute(body, responseType, endpoint, operationName);
-            if (res == null || res.length == 0) break;
-            all.addAll(List.of(res));
-            if (res.length < limit) break;
-            offset += limit;
-        }
-
-        return all;
-    }
+    // ── Private helpers ───────────────────────────────────────────────
 
     private static <T> T firstOrNull(T[] arr) {
         if (arr == null || arr.length == 0) return null;

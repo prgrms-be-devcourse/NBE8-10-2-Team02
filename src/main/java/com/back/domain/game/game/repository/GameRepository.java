@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Pageable;
+
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -45,4 +47,11 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
 
     @Query("SELECT MAX(g.lastFetchedAt) FROM Game g")
     Optional<Instant> findMaxLastFetchedAt();
+
+    // IGDB fallback: 이름 ILIKE 검색 (Circuit Breaker fallback 용)
+    @Query("SELECT g FROM Game g WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY g.likeCount DESC")
+    List<Game> findByNameContainingIgnoreCaseLimited(@Param("name") String name, Pageable pageable);
+
+    // IGDB fallback: 좋아요 기준 인기 게임 (Circuit Breaker fallback 용)
+    List<Game> findByOrderByLikeCountDesc(Pageable pageable);
 }
