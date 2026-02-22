@@ -55,11 +55,23 @@ jobs:
 
   deploy:
     needs: build-and-push
+    if: false
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Set lowercase image name
         run: echo "DOCKER_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "~/app"
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -68,10 +80,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/NBE8-10-2-Team02
-
-            # 최신 소스 pull (docker-compose.yml 등 반영, 일단 develop으로 해둠)
-            git pull origin develop
+            cd ~/app
 
             # GitHub Container Registry 로그인
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -87,6 +96,9 @@ jobs:
 
             # Nginx 재시작 (HTTPS 리버스 프록시)
             sudo systemctl reload nginx
+            
+            # dangling 이미지 정리
+            docker image prune -f
 
       - name: Discord 알림
         if: always()

@@ -48,21 +48,37 @@ custom:
   accessToken:
     expirationSeconds: "#{60*5}"
 resilience4j:
+  bulkhead:
+    instances:
+      igdb:
+        max-concurrent-calls: 10   # 동시 IGDB 호출 최대 10개 — 나머지는 즉시 fallback(DB)
+        max-wait-duration: 0s      # 대기 없이 즉시 BulkheadFullException
+      steam:
+        max-concurrent-calls: 3    # Steam 호출은 낮은 rate limit(1/s)에 맞춰 최소화
+        max-wait-duration: 0s
   circuitbreaker:
     instances:
       igdb:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
+        sliding-window-size: 5            # 10→5, 장애 감지 속도 개선
+        minimum-number-of-calls: 3        # 3건부터 failure rate 판정 (1은 일시적 오류에 과민)
+        failure-rate-threshold: 40        # 50→40, 더 민감하게 OPEN
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
+        ignore-exceptions:
+          - io.github.resilience4j.bulkhead.BulkheadFullException   # Bulkhead 거부는 CB 실패로 안 집계
       steam:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
+        sliding-window-size: 5
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 40
+        slow-call-duration-threshold: 3s
+        slow-call-rate-threshold: 80
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
+        ignore-exceptions:
+          - io.github.resilience4j.bulkhead.BulkheadFullException
   retry:
     instances:
-      igdb:
+      igdb-batch:
         max-attempts: 4
         wait-duration: 1s
         enable-exponential-backoff: true
@@ -83,11 +99,23 @@ resilience4j:
       igdb:
         limit-for-period: 4
         limit-refresh-period: 1s
-        timeout-duration: 5s
+        timeout-duration: 200ms  # 슬롯 날 때까지 200ms대기 후 없으면 즉시 RequestNotPermitted 던짐
+      igdb-batch:
+        limit-for-period: 4
+        limit-refresh-period: 1s
+        timeout-duration: 5s     # 배치 전용: 슬롯 날 때까지 5s 대기 허용 (새벽 단독 실행)
       steam:
         limit-for-period: 1
         limit-refresh-period: 1s
         timeout-duration: 10s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL:}"
 igdb:

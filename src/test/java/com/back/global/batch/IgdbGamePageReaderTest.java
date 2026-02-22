@@ -1,6 +1,6 @@
 package com.back.global.batch;
 
-import com.back.global.igdb.IgdbClient;
+import com.back.global.igdb.BatchIgdbClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
 import com.back.global.batch.reader.IgdbGamePageReader;
 import com.back.support.IgdbFixtures;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 class IgdbGamePageReaderTest {
 
     @Mock
-    private IgdbClient igdbClient;
+    private BatchIgdbClient igdbClient;
 
     @Test
     void 전체_동기화_updatedAfterEpoch가_null이면_필터없이_호출한다() {

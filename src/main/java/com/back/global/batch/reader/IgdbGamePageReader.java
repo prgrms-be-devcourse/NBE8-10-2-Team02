@@ -1,12 +1,12 @@
 package com.back.global.batch.reader;
 
-import com.back.global.igdb.IgdbClient;
+import com.back.global.igdb.BatchIgdbClient;
 import com.back.global.igdb.dto.IgdbGameDetailDto;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.infrastructure.item.ExecutionContext;
-import org.springframework.batch.infrastructure.item.ItemReader;
-import org.springframework.batch.infrastructure.item.ItemStream;
-import org.springframework.batch.infrastructure.item.ItemStreamException;
+import org.springframework.batch.item.ExecutionContext;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemStream;
+import org.springframework.batch.item.ItemStreamException;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -18,14 +18,14 @@ public class IgdbGamePageReader implements ItemReader<IgdbGameDetailDto>, ItemSt
     private static final String OFFSET_KEY = "igdb.game.offset";
     private static final int PAGE_SIZE = 500;
 
-    private final IgdbClient igdbClient;
+    private final BatchIgdbClient igdbClient;
     private final Long updatedAfterEpoch;
 
     private int currentOffset = 0;
     private final Queue<IgdbGameDetailDto> buffer = new ArrayDeque<>();
     private boolean exhausted = false;
 
-    public IgdbGamePageReader(IgdbClient igdbClient, Long updatedAfterEpoch) {
+    public IgdbGamePageReader(BatchIgdbClient igdbClient, Long updatedAfterEpoch) {
         this.igdbClient = igdbClient;
         this.updatedAfterEpoch = updatedAfterEpoch;
 

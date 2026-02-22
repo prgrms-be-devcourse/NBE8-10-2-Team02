@@ -17,6 +17,7 @@ public interface GameKeywordRepository extends JpaRepository<GameKeyword, Long> 
 
     List<GameKeyword> findByGameId(int gameId);
 
+
     @Query(value = "SELECT gk.keyword_id FROM game_keyword gk GROUP BY gk.keyword_id ORDER BY COUNT(*) DESC LIMIT 100",
             nativeQuery = true)
     List<Long> findTop100KeywordIdsByFrequency();

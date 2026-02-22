@@ -5,7 +5,7 @@ import com.back.domain.game.game.repository.*;
 import com.back.global.batch.dto.GameBatchItem;
 import com.back.global.igdb.dto.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.infrastructure.item.ItemProcessor;
+import org.springframework.batch.item.ItemProcessor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

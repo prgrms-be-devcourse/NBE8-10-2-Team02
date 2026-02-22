@@ -7,8 +7,8 @@ import com.back.domain.game.recommendation.service.GameVectorService;
 import com.back.global.batch.dto.GameBatchItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.infrastructure.item.Chunk;
-import org.springframework.batch.infrastructure.item.ItemWriter;
+import org.springframework.batch.item.Chunk;
+import org.springframework.batch.item.ItemWriter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
